@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+import rospy, os, sys
+from sound_play.msg import SoundRequest
+from sound_play.libsoundplay import SoundClient
+#import baxter_interface.digital_io as DIO
+
+def sleep(t):
+    try:
+        rospy.sleep(t)
+    except:
+        pass
+
+if __name__ == '__main__':
+    rospy.init_node('soundplay_test', anonymous = True)
+    print '----------------'
+
+    r=rospy.Rate(100);
+    soundhandle = SoundClient()
+    notDone = 1
+    count = 0
+    s = 0
+
+    while (notDone):
+      while (s==0):
+        print '.'
+        r.sleep()
+        f=open('/home/turtlebot/messagesFromTable','r')
+        s=f.read(1)
+        f.close()
+
+      print 'PRESSED'
+      soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/hello.wav')
+      sleep(2)
+      notDone = 0

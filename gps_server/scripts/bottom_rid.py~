@@ -1,0 +1,191 @@
+#!/usr/bin/env python
+import rospy
+import serial
+from std_msgs.msg import String
+import time
+
+import os, sys
+from sound_play.msg import SoundRequest
+from sound_play.libsoundplay import SoundClient
+
+import roslib
+from geometry_msgs.msg import Twist
+
+import argparse
+
+import cv2
+import cv_bridge
+
+from sensor_msgs.msg import (
+    Image,
+)
+
+outputMessages=0
+
+
+def sleep(t):
+	try:
+        	rospy.sleep(t)
+	except KeyboardInterrupt:
+		sys.exit()
+	except:
+		pass
+
+
+def callback(data):
+
+	if(data.data=='0'):
+        	#translate fwd
+		print '0'
+    		pub_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+    		cmd = Twist()
+    		rate = rospy.Rate(10) 
+
+    		cmd.linear.x = 0.1
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+
+    		cmd.linear.x = 0.0
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+		
+	elif(data.data=='1'):
+        	#translate left
+ 		print '1'
+		pub_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+    		cmd = Twist()
+    		rate = rospy.Rate(10) 
+
+    		cmd.linear.y = -0.1
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+
+    		cmd.linear.y = 0.0
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+	
+   		
+	elif(data.data=='2'):
+        	#translate left
+ 		print '2'
+		pub_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+    		cmd = Twist()
+    		rate = rospy.Rate(10) 
+
+    		cmd.linear.x = -0.1
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+
+    		cmd.linear.x = 0.0
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+	
+
+	elif(data.data=='3'):
+        	#translate right
+ 		print '3'
+
+	elif(data.data=='4'):
+        	#rotate left
+ 		print '4'
+    		pub_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+    		cmd = Twist()
+    		rate = rospy.Rate(10) 
+
+    		cmd.angular.z = 0.4
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+
+    		cmd.angular.z = 0.0
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+
+	elif(data.data=='5'):
+        	#rotate right
+ 		print '5'
+    		pub_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+    		cmd = Twist()
+    		rate = rospy.Rate(10) 
+
+    		cmd.angular.z = -0.4
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+
+    		cmd.angular.z = 0.0
+    		print cmd
+    		for i in range(0,5):
+    			if not rospy.is_shutdown():
+        			pub_vel.publish(cmd)
+        			rate.sleep() 
+
+	elif(data.data=='6'):
+ 		print '6'
+
+	elif(data.data=='7'):
+ 		print '7'
+
+	elif(data.data=='9'):
+ 		print '9'
+
+	time.sleep(0.01)
+
+
+def listener():
+	rospy.init_node('rid', anonymous=True)
+
+	rospy.Subscriber('to_ridgeback', String, callback)
+	pub= rospy.Publisher('from_ridgeback', String, queue_size=10)	
+	r=rospy.Rate(10)
+	r.sleep()
+
+    	pub_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+
+	soundhandle = SoundClient()
+	notDone = 1
+	count = 0
+
+	while not rospy.is_shutdown():
+		r.sleep()
+
+
+if __name__== '__main__':
+
+    	print '-----------------------------------------'
+    	print '-Ridgeback simple demo controller python-'
+    	print '-   DEC 2016, HH, Martin                -'
+    	print '-----------------------------------------'
+
+	try:
+		listener()
+	except rospy.ROSInterruptException:
+		pass
+	finally:
+		pass
+

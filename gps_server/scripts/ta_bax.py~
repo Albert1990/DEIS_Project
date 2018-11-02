@@ -1,0 +1,300 @@
+#!/usr/bin/env python
+import rospy
+import serial
+from std_msgs.msg import String
+import time
+
+import os, sys
+from sound_play.msg import SoundRequest
+from sound_play.libsoundplay import SoundClient
+
+import baxter_interface.digital_io as DIO
+import baxter_interface
+
+import argparse
+
+import cv2
+import cv_bridge
+
+from sensor_msgs.msg import (
+    Image,
+)
+
+import baxter_interface
+from baxter_interface import CHECK_VERSION
+
+
+
+baxterEnabled=0
+outputMessages=0
+
+
+
+class martin_baxter_interface:
+	def __init__(self):
+		self.sub = rospy.Subscriber('to_baxter', String, self.callback)
+		self.pub = rospy.Publisher('from_baxter', String, queue_size=10)	
+		self.r=rospy.Rate(10)
+		self.r.sleep()
+
+		#set up our variables
+		self.b=DIO.DigitalIO('torso_right_button_ok');
+		self.soundhandle = SoundClient()
+		self.notDone = 1
+		self.count = 0
+
+		#for enabling
+		self.rs = baxter_interface.RobotEnable(CHECK_VERSION)
+
+		#no left gripper #left = baxter_interface.Gripper('left', CHECK_VERSION)
+		self.right_gripper = baxter_interface.Gripper('right', CHECK_VERSION)
+
+		#for the robot's display
+		self.face_pub = rospy.Publisher('/robot/xdisplay', Image, latch=True, queue_size=1)
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_4_happy2.png")
+		self.happyFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_3_neutral2.png")
+		self.neutralFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+	
+		#define right arm poses
+		self.rightArmNeutralPose = {'right_s0': 1.0369710126105396, 'right_s1': -0.1614514779249398, 'right_w0': 0.25579129637989273, 'right_w1': -0.10891263593986437, 'right_w2': 0.0, 'right_e0': 0.04295146206079158, 'right_e1': 1.749121593386343}
+
+		self.rightArmUpALittlePose = {'right_s0': 1.0062913968528313, 'right_s1': -1.0342865462317403, 'right_w0': 0.25617479157686407, 'right_w1': 0.045252433242619704, 'right_w2': -0.0003834951969713534, 'right_e0': 0.044485442848677, 'right_e1': 2.4470828518742063}
+
+		self.rightArmSidePose = {'right_s0': -0.22702915660704123, 'right_s1': -1.0484758685196802, 'right_w0': 0.22702915660704123, 'right_w1': -1.292378813793461, 'right_w2': 0.0003834951969713534, 'right_e0': -0.19251458887961942, 'right_e1': 2.2208206856611077}
+
+		self.rightArmFrontOfferingPose = {'right_s0': 0.6626797003664987, 'right_s1': -1.0381214982014537, 'right_w0': -0.0732475826215285, 'right_w1': -1.3963060121726978, 'right_w2': -0.0003834951969713534, 'right_e0': 0.23584954613738238, 'right_e1': 2.249582825433959}
+
+		self.right_limb = baxter_interface.Limb('right')
+		angles = self.right_limb.joint_angles()
+		print angles
+
+		self.left_limb = baxter_interface.Limb('left')
+		angles = self.left_limb.joint_angles()
+		print angles
+
+
+	def callback(self, data):
+
+		#global baxterEnabled
+		if(data.data=='0'):
+        		#enable robot
+			print '0'
+			self.rs.enable()
+		elif(data.data=='1'):
+        		#disable
+ 			print '1'
+			self.rs.disable()
+		elif(data.data=='2'):
+        		#head left
+ 			print '2'
+			baxter_interface.Head().set_pan(-0.9)
+			time.sleep(1)
+		elif(data.data=='3'):
+        		#head neutral
+ 			print '3'
+			baxter_interface.Head().set_pan(0.0)
+			time.sleep(1)
+		elif(data.data=='4'):
+        		#face happy
+ 			print '4'
+			self.face_pub.publish(self.happyFace)
+			time.sleep(0.5)
+
+		elif(data.data=='5'):
+        		#face neutral
+ 			print '5'
+			self.face_pub.publish(self.neutralFace)
+			time.sleep(1)
+		elif(data.data=='6'):
+        		#arms neutral
+ 			print '6'
+			#self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+			self.right_limb.move_to_neutral()
+        		self.left_limb.move_to_neutral()
+		elif(data.data=='7'):
+ 			print '7'
+		elif(data.data=='8'):
+ 			print '8'
+		elif(data.data=='9'):
+ 			print '9'
+		elif(data.data=='a'):
+			#close right gripper
+ 			print 'a'
+			self.right_gripper.close()		
+		elif(data.data=='b'):
+			#open right gripper
+ 			print 'b'
+			self.right_gripper.open()
+		elif(data.data=='c'):
+			#arm wave
+ 			print 'c'
+		elif(data.data=='d'):
+ 			print 'd'
+			angles = self.right_limb.joint_angles()
+			print angles
+			angles = self.left_limb.joint_angles()
+			print angles
+		elif(data.data=='e'):
+ 			print 'e'
+		elif(data.data=='f'):
+ 			print 'f'
+		elif(data.data=='i'):
+ 			print 'i'
+			self.right_gripper.calibrate()
+		elif(data.data=='mytest'):
+ 			print 'mytest'
+		time.sleep(0.01)
+
+def sleep(t):
+	try:
+        	rospy.sleep(t)
+	except KeyboardInterrupt:
+		sys.exit()
+	except:
+		pass
+
+def listener():
+	
+	rospy.init_node('bax', anonymous=True)
+	my_bax = martin_baxter_interface()
+
+	'''
+	rospy.Subscriber('to_baxter', String, callback)
+	pub= rospy.Publisher('from_baxter', String, queue_size=10)	
+	r=rospy.Rate(10)
+	r.sleep()
+
+	#set up our variables
+	b=DIO.DigitalIO('torso_right_button_ok');
+	soundhandle = SoundClient()
+	notDone = 1
+	count = 0
+
+	#for enabling
+	rs = baxter_interface.RobotEnable(CHECK_VERSION)
+
+	#no left gripper #left = baxter_interface.Gripper('left', CHECK_VERSION)
+	right = baxter_interface.Gripper('right', CHECK_VERSION)
+
+	#for the robot's display
+	face_pub = rospy.Publisher('/robot/xdisplay', Image, latch=True, queue_size=1)
+	img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_4_happy2.png")
+	happyFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+	img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_3_neutral2.png")
+	neutralFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+	#baxter_interface.Head().set_pan(-0.9)
+	'''
+
+	while not rospy.is_shutdown():
+		my_bax.r.sleep()
+
+'''
+    	#define right arm poses
+	rightArmNeutralPose = {'right_s0': 1.0369710126105396, 'right_s1': -0.1614514779249398, 'right_w0': 0.25579129637989273, 'right_w1': -0.10891263593986437, 'right_w2': 0.0, 'right_e0': 0.04295146206079158, 'right_e1': 1.749121593386343}
+
+	rightArmUpALittlePose = {'right_s0': 1.0062913968528313, 'right_s1': -1.0342865462317403, 'right_w0': 0.25617479157686407, 'right_w1': 0.045252433242619704, 'right_w2': -0.0003834951969713534, 'right_e0': 0.044485442848677, 'right_e1': 2.4470828518742063}
+
+	rightArmSidePose = {'right_s0': -0.22702915660704123, 'right_s1': -1.0484758685196802, 'right_w0': 0.22702915660704123, 'right_w1': -1.292378813793461, 'right_w2': 0.0003834951969713534, 'right_e0': -0.19251458887961942, 'right_e1': 2.2208206856611077}
+
+	rightArmFrontOfferingPose = {'right_s0': 0.6626797003664987, 'right_s1': -1.0381214982014537, 'right_w0': -0.0732475826215285, 'right_w1': -1.3963060121726978, 'right_w2': -0.0003834951969713534, 'right_e0': 0.23584954613738238, 'right_e1': 2.249582825433959}
+
+	limb = baxter_interface.Limb('right')
+	angles = limb.joint_angles()
+	print angles
+
+	s = '0'
+
+    	#set up robot's initial state just in case
+    	pub.publish(neutralFace)
+    	sleep(1)
+    	baxter_interface.Head().set_pan(0.0)
+    	sleep(1)
+    	limb.move_to_joint_positions(rightArmNeutralPose)
+    	sleep(5)
+'''
+
+
+
+
+'''
+    #start main loop
+    while (not rospy.is_shutdown()):
+      #wait until the table has sent us a message
+      while ((not rospy.is_shutdown()) and (s[0]=='0')):
+        print '.'
+        r.sleep()
+        f=open('/home/turtlebot/messagesFromTable','r')
+        s=f.read()
+        f.close()
+
+      if (not rospy.is_shutdown()):_pub
+        print 'person has come in front of the robot'
+        pub.publish(happyFace)
+        #sleep(1)
+        soundhandle.say('hello')
+        sleep(1)
+        soundhandle.say(s)
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/hello.wav')
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmUpALittlePose)
+        sleep(3)
+
+      if (not rospy.is_shutdown()):
+        print 'get a bag'
+        baxter_interface.Head().set_pan(-0.9)
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmSidePose)
+        #sleep(5)
+        soundhandle.say('May I have a bag, please?')
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav')
+        #sleep(2)
+        #waits until the button on the robot is pressed, just in case
+      while ((not rospy.is_shutdown()) and (b.state==0)):
+        print '.'
+        r.sleep()
+
+      if (not rospy.is_shutdown()):
+        print 'bye'
+        baxter_interface.Head().set_pan(0.0)
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmFrontOfferingPose)
+        #sleep(5)
+        soundhandle.say('There you go, have a good day!')
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/there_you_go.wav')
+        sleep(5)
+        #while (b.state==0):
+        #  print '.'
+        #  r.sleep()
+
+      if (not rospy.is_shutdown()):
+        print 'back to waiting'
+        limb.move_to_joint_positions(rightArmNeutralPose)
+        sleep(5)
+        pub.publish(neutralFace)
+        #write table we have finished
+        f=open('/home/turtlebot/messagesFromTable','w')
+        s=f.write('0')
+        f.close()
+        s = '0'
+        sleep(1)
+
+    if (rospy.is_shutdown()):
+      print 'ros has been shut down. bye!'      
+
+'''
+
+if __name__== '__main__':
+
+    	print '-------------------------------------'
+    	print '-Baxter ridgeback simple demo python-'
+    	print '-   DEC 2016, HH, Martin            -'
+    	print '-------------------------------------'
+
+	try:
+		listener()
+	except rospy.ROSInterruptException:
+		pass
+	finally:
+		pass
+

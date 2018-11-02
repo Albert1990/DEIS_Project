@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+import rospy, os, sys
+from sound_play.msg import SoundRequest
+from sound_play.libsoundplay import SoundClient
+
+import baxter_interface.digital_io as DIO
+import baxter_interface
+
+import argparse
+
+import cv2
+import cv_bridge
+
+from sensor_msgs.msg import (
+    Image,
+)
+
+def sleep(t):
+    try:
+        rospy.sleep(t)
+    except:
+        pass
+
+
+if __name__ == '__main__':
+    rospy.init_node('checkArmAngles', anonymous = True)
+    r=rospy.Rate(10);
+    r.sleep()
+    #sleep(1)
+    limb = baxter_interface.Limb('right')
+    angles = limb.joint_angles()
+    print angles
+    r.sleep()
+    #sleep(1)
+
+

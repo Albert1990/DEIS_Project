@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+import rospy, os, sys
+from sound_play.msg import SoundRequest
+from sound_play.libsoundplay import SoundClient
+
+import baxter_interface.digital_io as DIO
+import baxter_interface
+from baxter_interface import CHECK_VERSION
+
+import argparse
+
+import cv2
+import cv_bridge
+
+from sensor_msgs.msg import (
+    Image,
+)
+
+from subprocess import call
+
+
+def sleep(t):
+    try:
+        rospy.sleep(t)
+    except KeyboardInterrupt:
+        sys.exit()
+    except:
+        pass
+
+
+
+def mainLoop():
+
+    #set up our variables
+ 
+    r=rospy.Rate(10);
+    soundhandle = SoundClient()
+    sleep(5)
+    soundhandle.playWave("/home/turtlebot/Desktop/baxter_aug_event/hello.wav");
+    sleep(5)
+   
+     
+    if (rospy.is_shutdown()):
+      print 'ros has been shut down. bye!'      
+
+
+if __name__ == '__main__':
+    rospy.init_node('baxter-icecream', anonymous = True)
+
+    print '---------------------'
+    print '-Baxter ice cream    -'
+    print '-  Jan 2017, HH  -'
+    print '---------------------'
+
+    mainLoop()
+    #try:
+    #  mainLoop()
+    #except KeyboardInterrupt:
+    #  sys.exit()
+
+
+

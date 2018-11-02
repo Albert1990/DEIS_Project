@@ -1,0 +1,1414 @@
+#!/usr/bin/env python
+import rospy
+import serial
+from std_msgs.msg import String
+import time
+import datetime
+
+import os, sys
+from sound_play.msg import SoundRequest
+from sound_play.libsoundplay import SoundClient
+
+import baxter_interface.digital_io as DIO
+import baxter_interface
+
+import argparse
+
+import cv2
+import cv_bridge
+
+from sensor_msgs.msg import (
+    Image,
+)
+
+import baxter_interface
+from baxter_interface import CHECK_VERSION
+
+import threading
+
+
+baxterEnabled=0
+outputMessages=0
+
+
+
+class martin_baxter_interface:
+	def __init__(self):
+
+		self.speechRecognitionFlag = False
+		self.imageFlag = False
+
+		self.sub = rospy.Subscriber('to_baxter', String, self.callback)
+		#self.subSpeech = rospy.Subscriber('/recognizer/output', String, self.talkback)
+		self.pub = rospy.Publisher('from_baxter', String, queue_size=10)
+		self.subFaceIDs = rospy.Subscriber('faceIDs', String, self.faceIDCallback)
+
+		#image_topic = "/cameras/left_hand_camera/image"
+		image_topic = "/cameras/head_camera/image"
+
+		self.subCam = rospy.Subscriber(image_topic, Image, self.image_callback)	
+		self.bridge = cv_bridge.CvBridge()
+
+		self.r=rospy.Rate(10)
+		self.r.sleep()
+
+		#set up our variables
+		self.b=DIO.DigitalIO('torso_left_button_ok');
+		self.soundhandle = SoundClient()
+		self.notDone = 1
+		self.count = 0
+		self.processingFacesFlag = False
+		self.showFaces = True
+
+		self.t1 = threading.Timer(15.0*60.0, self.tell_teacher_it_is_time) #15 minutes from start of class (start robotics)
+		self.t2 = threading.Timer(30.0*60.0, self.tell_teacher_it_is_time) #30 minutes (start exploring)
+		self.t3 = threading.Timer(45.0*60.0, self.tell_teacher_it_is_time) #45 minutes (start vision)
+		self.t4 = threading.Timer(60.0*60.0, self.tell_teacher_it_is_time) #60 minutes (start exploring)
+		self.t5 = threading.Timer(75.0*60.0, self.tell_teacher_it_is_time) #75 minutes (start last comments)
+
+
+		#for enabling
+		self.rs = baxter_interface.RobotEnable(CHECK_VERSION)
+
+		#no left gripper #left = baxter_interface.Gripper('left', CHECK_VERSION)
+		self.right_gripper = baxter_interface.Gripper('right', CHECK_VERSION)
+
+		#for the robot's display
+		self.face_pub = rospy.Publisher('/robot/xdisplay', Image, latch=True, queue_size=1)
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_4_happy2.png")
+		self.happyFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_3_neutral2.png")
+		self.neutralFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/quiz.png")
+		self.quizFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/blink.png")
+		self.blinkFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/chart1_venn.png")
+		self.vennFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/chart1_hist.png")
+		self.histFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/chart1_pie.png")
+		self.pieFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/chart1_gantt.png")
+		self.ganttFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+						
+
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/diode.png")
+		self.diodeFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/light.png")
+		self.lightFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/ohm.png")
+		self.ohmFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/resistor.png")
+		self.resistorFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/switch.png")
+		self.switchFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/transistor.png")
+		self.transistorFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/volt.png")
+		self.voltFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/capacitor.png")
+		self.capacitorFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+	
+
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/sensors1.png")
+		self.sensorsquiz1Face = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/sensors1_ans.png")
+		self.sensorsquiz1AnsFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/sensors2.png")
+		self.sensorsquiz2Face = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/sensors2_ans.png")
+		self.sensorsquiz2AnsFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/actuators.png")
+		self.actuatorsquizFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/actuators_ans.png")
+		self.actuatorsquizAnsFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/imageproc.png")
+		self.improcquizFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/imageproc_ans.png")
+		self.improcquizAnsFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/imageproc2.png")
+		self.improcquiz2Face = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+		img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/imageproc2_ans.png")
+		self.improcquiz2AnsFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")	
+
+
+
+		self.face_pub.publish(self.neutralFace)
+		time.sleep(1)
+        	#head center left
+ 		print 'head center-left'
+		baxter_interface.Head().set_pan(0.4)
+		time.sleep(1)
+
+	
+		#define right arm poses
+		self.rightArmNeutralPose = {'right_s0': 0.8053399136398423, 'right_s1': -0.1622184683188825, 'right_w0': -0.13077186216723152, 'right_w1': -0.22012624306155687, 'right_w2': 0.02032524543948173, 'right_e0': -0.017640779060682257, 'right_e1': 1.7437526606287441}
+		self.leftArmNeutralPose = {'left_w0': -0.33555829734993425, 'left_w1': -0.1580000211521976, 'left_w2': 0.06634466907604414, 'left_e0': -0.051004861197190006, 'left_e1': 1.5957235145978017, 'left_s0': -0.9503010980950138, 'left_s1': -0.060975736318445196}
+
+		self.leftArmHighPose = {'left_w0': -0.6082233823965666, 'left_w1': -0.3508981052287884, 'left_w2': -0.008820389530341128, 'left_e0': 0.10967962633380708, 'left_e1': -0.04832039481839053, 'left_s0': -0.34131072530450457, 'left_s1': -0.8923933233523395}
+		self.leftArmHighPose2 = {'left_w0': -0.43104860139580126, 'left_w1': -0.3336408213650775, 'left_w2': -0.003451456772742181, 'left_e0': 0.12885438618237474, 'left_e1': -0.0502378708032473, 'left_s0': -0.8628641931855452, 'left_s1': -0.9257574054888472}
+
+		self.rightArmFetchPose = {'right_s0': 1.6183497312191115, 'right_s1': -0.381961216183468, 'right_w0': 0.7903836009579595, 'right_w1': 1.488728354642794, 'right_w2': -0.47284957786567877, 'right_e0': -0.0559902987578176, 'right_e1': -0.049854375606275945}
+
+		self.rightArmDeliverPose = {'right_s0': 1.2191312311719327, 'right_s1': -0.1365242901218018, 'right_w0': 0.375441797834955, 'right_w1': 0.2822524649709161, 'right_w2': -0.05675728915176031, 'right_e0': -0.19865051203116108, 'right_e1': 0.015339807878854137}
+
+
+		self.leftArmGreetingPose2 = {'left_w0': -2.1295488287819255, 'left_w1': 1.0250826615044277, 'left_w2': -0.09817477042466648, 'left_e0': 0.24083498369800996, 'left_e1': -0.0502378708032473, 'left_s0': 0.273432075440575, 'left_s1': -0.8482913757006338}
+		self.rightArmGreetingPose2 = {'right_s0': 0.6481068828815874, 'right_s1': -1.1596894756413727, 'right_w0': 2.1038546505848448, 'right_w1': 1.1953545289597087, 'right_w2': 0.3658544179106712, 'right_e0': -0.42452918304728826, 'right_e1': 0.21552430069790063}
+
+		self.leftArmGreetingPose1 = {'left_w0': -2.1356847519334674, 'left_w1': -0.058674765136617076, 'left_w2': -0.18983012250081996, 'left_e0': 0.2151408055009293, 'left_e1': -0.04908738521233324, 'left_s0': 0.2726650850466323, 'left_s1': -0.8574952604279463}
+		self.rightArmGreetingPose1 = {'right_s0': 0.7148350471546028, 'right_s1': -1.1213399559442374, 'right_w0': 2.1130585353121574, 'right_w1': 0.1004757416064946, 'right_w2': 0.30871363356193954, 'right_e0': -0.5817622138055432, 'right_e1': 0.19059711289476267}
+
+
+		self.rightThrowPose1 = {'right_s0': 0.8325680726248084, 'right_s1': -0.36623791310764253, 'right_w0': -0.16298545871282522, 'right_w1': -1.4898788402337082, 'right_w2': 0.0222427214243385, 'right_e0': -0.09318933286403888, 'right_e1': 2.370767307676907}
+		#{'right_s0': 0.8352525390036077, 'right_s1': -0.33402431656204884, 'right_w0': -0.1284708909854034, 'right_w1': -1.0572962580500214, 'right_w2': 0.03298058693953639, 'right_e0': -0.03719903410622128, 'right_e1': 1.7583254781136555}
+		self.rightThrowPose2 = {'right_s0': 0.8145437983671547, 'right_s1': -0.16490293469768197, 'right_w0': 0.08168447695489828, 'right_w1': 1.5132720472489607, 'right_w2': 0.004218447166684887, 'right_e0': -0.1491796316218565, 'right_e1': 0.25349032519806464}
+		#{'right_s0': 0.8099418560034984, 'right_s1': -0.1614514779249398, 'right_w0': -0.08935438089432535, 'right_w1': 0.7754272882760767, 'right_w2': 0.002684466378799474, 'right_e0': -0.14534467965214296, 'right_e1': 0.2876213977285151}
+		#{'right_s0': 1.1474176293382894, 'right_s1': -0.8279661302611521, 'right_w0': 0.19711653124327566, 'right_w1': 0.7980535048973865, 'right_w2': -0.045252433242619704, 'right_e0': -0.07708253459124204, 'right_e1': 0.3321068405771921}
+		#{'right_s0': 0.8271991398672094, 'right_s1': -0.3670049035015852, 'right_w0': -0.1357572997278591, 'right_w1': -1.4519128157335441, 'right_w2': 0.041033986075934815, 'right_e0': -0.09012137128826805, 'right_e1': 1.5669613748249502}
+
+
+		self.right_limb = baxter_interface.Limb('right')
+		angles = self.right_limb.joint_angles()
+		#print angles
+
+		self.left_limb = baxter_interface.Limb('left')
+		angles = self.left_limb.joint_angles()
+		#print angles
+
+		self.right_gripper.calibrate()
+
+
+		self.firstFrame= None
+		#self.MIN_AREA=5000
+		self.totalContourSum=0
+		self.leftContourSum=0
+		self.rightContourSum=0
+		#self.contourSum_lessNoise=0
+		self.lastTimeRefreshed=time.time()
+		self.robotFaceLeft = False
+		self.lastTimeMoved=-1
+
+	def image_callback(self, msg):
+    		#print("Received an image!")
+		if(self.imageFlag == True):
+    			try:
+            			cv2_img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        		except cv_bridge.CvBridgeError, e:
+            			print(e)
+        		else:
+            			#get image, process, then send to robot's display
+
+				'''#this worked to just show cam image on display!
+				resized_frame = cv2.resize(cv2_img, (1024, 600))
+				currentFace = cv_bridge.CvBridge().cv2_to_imgmsg(resized_frame, encoding="bgr8")
+				self.face_pub.publish(currentFace)
+				'''
+		
+				'''
+				#this worked to just show gray image on display!
+				resized_frame = cv2.resize(cv2_img, (1024, 600))
+				gray = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
+				grayReverted = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+				currentFace = cv_bridge.CvBridge().cv2_to_imgmsg(grayReverted, encoding="bgr8")
+				self.face_pub.publish(currentFace)
+				'''
+
+
+
+				resized_frame = cv2.resize(cv2_img, (1024, 600))
+				gray = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
+				gray = cv2.GaussianBlur(gray, (21,21), 0)
+
+				currentTime = time.time()
+				#refresh background image if enough time has gone by
+				if self.firstFrame is None or ((currentTime - self.lastTimeRefreshed) > 3) :
+					print "refreshing background"
+					self.firstFrame = gray
+					self.lastTimeRefreshed = currentTime
+					#continue
+				else:
+
+					frameDelta=cv2.absdiff(self.firstFrame, gray)
+					thresh= cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
+	
+					thresh= cv2.dilate(thresh, None, iterations=2)
+
+					leftSide= thresh.copy()
+					rightSide= thresh.copy()
+					if(self.robotFaceLeft == True):
+						cv2.rectangle(leftSide, (1024/4, 0), (1024, 600), (0,0,0), -1)
+						cv2.rectangle(rightSide, (0, 0), (1024/4, 600), (0,0,0), -1)
+					else:
+						cv2.rectangle(leftSide, (1024/2, 0), (1024, 600), (0,0,0), -1)
+						cv2.rectangle(rightSide, (0, 0), (1024/2, 600), (0,0,0), -1)
+					#1024/2 3*1024/4
+					
+					(cnts, _) = cv2.findContours(leftSide.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+					#(cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+					self.leftContourSum=0
+					#self.totalContourSum=0
+					#contourSum_lessNoise=0
+					for c in cnts:
+						self.leftContourSum+= cv2.contourArea(c)
+						#if cv2.contourArea(c) < MIN_AREA:
+						#	continue
+						#contourSum_lessNoise+= cv2.contourArea(c)
+					#currentFace = cv_bridge.CvBridge().cv2_to_imgmsg(resized_frame, encoding="bgr8")
+					#print self.leftContourSum
+
+
+					(cnts, _) = cv2.findContours(rightSide.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+					self.rightContourSum=0
+					for c in cnts:
+						self.rightContourSum+= cv2.contourArea(c)
+						#if cv2.contourArea(c) < MIN_AREA:
+						#	continue
+						#contourSum_lessNoise+= cv2.contourArea(c)
+					#currentFace = cv_bridge.CvBridge().cv2_to_imgmsg(resized_frame, encoding="bgr8")
+
+					print self.leftContourSum, self.rightContourSum
+					BUFFER_VALUE = 2000
+					if(self.leftContourSum > (self.rightContourSum + BUFFER_VALUE)):
+						print "left bigger"
+						if self.robotFaceLeft == False and ((self.lastTimeMoved+10) < currentTime):
+							self.robotFaceLeft = True
+							baxter_interface.Head().set_pan(0.9)
+							self.lastTimeMoved = currentTime
+							time.sleep(2)
+							self.firstFrame = None
+							
+					elif(self.rightContourSum  > (self.leftContourSum + BUFFER_VALUE)):
+						print "right bigger"
+						if self.robotFaceLeft == True and ((self.lastTimeMoved+10) < currentTime):
+							self.robotFaceLeft = False
+							baxter_interface.Head().set_pan(0.4)
+							self.lastTimeMoved = currentTime
+							time.sleep(2)
+							self.firstFrame = None
+							
+
+					#grayReverted = cv2.cvtColor(leftSide, cv2.COLOR_GRAY2BGR)
+					grayReverted = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+					currentFace = cv_bridge.CvBridge().cv2_to_imgmsg(grayReverted, encoding="bgr8")
+					self.face_pub.publish(currentFace)
+
+					
+
+
+				'''
+				'''
+				#currentFace = cv_bridge.CvBridge().cv2_to_imgmsg(gray, encoding="8UC1")
+				#currentFace = cv_bridge.CvBridge().cv2_to_imgmsg(gray, encoding="8UC1")
+				#self.face_pub.publish(currentFace)
+
+
+				'''
+				resized_frame = cv2.resize(frame, (1024, 600))
+
+				#gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+				#cv2.imshow('frame',gray)
+				
+				#cv2.imshow('extra',frame)
+				#sleep(0.05)
+				cv2.waitKey(3)
+				'''
+
+				#print "received image"
+
+			#time.sleep(0.01)
+		self.r.sleep()
+
+	def faceIDCallback(self, data):
+		print data.data
+		if(self.processingFacesFlag == True and self.showFaces == True):
+			if(data.data=='40'):
+				img = cv2.imread("/home/turtlebot/face_recognition/att_faces/s41/1.pgm")
+				resized_img = cv2.resize(img, (1024, 600))
+				preparedImg = cv_bridge.CvBridge().cv2_to_imgmsg(resized_img, encoding="bgr8")	
+				self.face_pub.publish(preparedImg)
+			if(data.data=='59'):
+				img = cv2.imread("/home/turtlebot/face_recognition/att_faces/s60/1.pgm")
+				resized_img = cv2.resize(img, (1024, 600))
+				preparedImg = cv_bridge.CvBridge().cv2_to_imgmsg(resized_img, encoding="bgr8")	
+				self.face_pub.publish(preparedImg)
+			if(data.data=='60'):
+				img = cv2.imread("/home/turtlebot/face_recognition/att_faces/s61/1.pgm")
+				resized_img = cv2.resize(img, (1024, 600))
+				preparedImg = cv_bridge.CvBridge().cv2_to_imgmsg(resized_img, encoding="bgr8")	
+				self.face_pub.publish(preparedImg)
+			if(data.data=='61'):
+				img = cv2.imread("/home/turtlebot/face_recognition/att_faces/s62/1.pgm")
+				resized_img = cv2.resize(img, (1024, 600))
+				preparedImg = cv_bridge.CvBridge().cv2_to_imgmsg(resized_img, encoding="bgr8")	
+				self.face_pub.publish(preparedImg)
+			if(data.data=='62'):
+				img = cv2.imread("/home/turtlebot/face_recognition/att_faces/s63/1.pgm")
+				resized_img = cv2.resize(img, (1024, 600))
+				preparedImg = cv_bridge.CvBridge().cv2_to_imgmsg(resized_img, encoding="bgr8")	
+				self.face_pub.publish(preparedImg)
+			if(data.data=='63'):
+				img = cv2.imread("/home/turtlebot/face_recognition/att_faces/s64/1.pgm")
+				resized_img = cv2.resize(img, (1024, 600))
+				preparedImg = cv_bridge.CvBridge().cv2_to_imgmsg(resized_img, encoding="bgr8")	
+				self.face_pub.publish(preparedImg)
+			if(data.data=='64'):
+				img = cv2.imread("/home/turtlebot/face_recognition/att_faces/s65/1.pgm")
+				resized_img = cv2.resize(img, (1024, 600))
+				preparedImg = cv_bridge.CvBridge().cv2_to_imgmsg(resized_img, encoding="bgr8")	
+				self.face_pub.publish(preparedImg)
+			if(data.data=='65'):
+				img = cv2.imread("/home/turtlebot/face_recognition/att_faces/s66/1.pgm")
+				resized_img = cv2.resize(img, (1024, 600))
+				preparedImg = cv_bridge.CvBridge().cv2_to_imgmsg(resized_img, encoding="bgr8")	
+				self.face_pub.publish(preparedImg)
+			if(data.data=='66'):
+				img = cv2.imread("/home/turtlebot/face_recognition/att_faces/s67/1.pgm")
+				resized_img = cv2.resize(img, (1024, 600))
+				preparedImg = cv_bridge.CvBridge().cv2_to_imgmsg(resized_img, encoding="bgr8")	
+				self.face_pub.publish(preparedImg)
+
+
+
+	def talkback(self, data):
+		print data.data
+		if(self.speechRecognitionFlag == False):
+			print "heard something but ignoring"
+		else:
+			if(data.data=='switch'):
+				print "heard switch!"
+				self.face_pub.publish(self.switchFace)
+			elif(data.data=='capacitor'):
+				print "heard capacitor!"
+				self.face_pub.publish(self.capacitorFace)
+			elif(data.data=='diode'):
+				print "heard diode!"
+				self.face_pub.publish(self.diodeFace)
+			elif(data.data=='resistor'):
+				print "heard resistor!"
+				self.face_pub.publish(self.resistorFace)
+			elif(data.data=='voltage divider'):
+				print "heard voltage divider!"
+				self.face_pub.publish(self.voltFace)
+			elif(data.data=="ohm's law"):
+				print "heard Ohm's law!"
+				self.face_pub.publish(self.ohmFace)
+			elif(data.data=='transistor'):
+				print "heard transistor!"
+				self.face_pub.publish(self.transistorFace)
+			elif(data.data=='led'):
+				print "heard LED!"
+				self.face_pub.publish(self.lightFace)
+			elif(data.data=='light'):
+				print "heard light!"
+				self.face_pub.publish(self.lightFace)
+
+	def tell_teacher_it_is_time(self):
+		print "timer called!"
+		now= datetime.datetime.now()
+		print(now)
+		time.sleep(1)
+		self.soundhandle.say('Excuse me.') 
+		time.sleep(2)
+		self.soundhandle.say('Martin, it is time.') 
+		time.sleep(2)
+
+	def callback(self, data):
+
+		print data.data
+
+		#global baxterEnabled
+		if(data.data=='00'):
+
+			#DAY 1
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			self.left_limb.move_to_joint_positions(self.leftArmHighPose)
+
+
+
+			#<Action put up hand in greeting, smile>
+			self.soundhandle.say('Hello, my name is Baxter.')
+			self.face_pub.publish(self.happyFace)
+			time.sleep(4)
+			self.soundhandle.say('I am a social robot with two 7 degree of freedom arms, an omnidirectional mobile base, speakers, and a display to interact with people.')
+			
+			time.sleep(11)
+			self.soundhandle.say('I also have 13 sonar sensors around my head, infrared range sensors and cameras in my hands, force sensors in my arms, a laser and inertial measurement unit in my base, and a microphone to be able to sense.')
+			time.sleep(17)
+			#<Action: point to its sensors>
+			self.soundhandle.say('My role will be to be a teaching assistant for the first few lectures of this course, to help support learning.')
+			time.sleep(8)
+			self.soundhandle.say('As you can see I am a robot, which is one example of an intelligent and embedded system, so I am happy to participate.')
+			time.sleep(10)
+			self.soundhandle.say('As you can guess, I cannot do very much yet. My current system is just a mock-up. Martin will control me with some simple code and button presses.')
+			time.sleep(13)
+			self.soundhandle.say('But in the next few years I hope to learn and become able to do more and more things, and better.')
+			time.sleep(9)
+			self.soundhandle.say('Also, we are hoping to get some ideas about robots will be able to be useful in classrooms in the future.')
+			time.sleep(9)
+			#<Action turn head left to Martin>
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+			self.soundhandle.say('Martin, can you tell us a little bit about the course?')
+			baxter_interface.Head().set_pan(0.9)
+			time.sleep(5)
+			#<Action turn head center>
+			#self.rs.enable()
+			baxter_interface.Head().set_pan(0.4)
+			time.sleep(1)
+
+			self.face_pub.publish(self.neutralFace)
+			''''''
+			'''
+			#unused
+			cap = cv2.VideoCapture('output.avi')
+
+			while(cap.isOpened()):
+				ret, frame = cap.read()
+				print ret
+				if ret==False:
+					break
+
+				#gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+				#cv2.imshow('frame',gray)
+				currentFace = cv_bridge.CvBridge().cv2_to_imgmsg(frame, encoding="bgr8")
+				self.face_pub.publish(currentFace)
+				#cv2.imshow('extra',frame)
+				#sleep(0.05)
+				cv2.waitKey(10)
+				#if cv2.waitKey(1) & 0xFF == ord('q'):
+				#	break
+
+			cap.release()
+			cv2.destroyWindow('extra')
+				#cv2.destroyAllWindows()
+			'''
+		elif(data.data=='01'):
+			#DAY 1
+			#handout
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+			self.right_gripper.open()
+			time.sleep(1)
+			self.right_limb.move_to_joint_positions(self.rightArmFetchPose)
+			time.sleep(1)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.right_gripper.close()
+			time.sleep(1)
+			self.right_limb.move_to_joint_positions(self.rightArmDeliverPose)
+			time.sleep(1)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.right_gripper.open()
+			time.sleep(2)
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+			time.sleep(1)
+
+		
+		elif(data.data=='02'):
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!')
+			time.sleep(2)
+			self.soundhandle.say('Can you find the human? Which do you think the human is?')
+
+		elif(data.data=='03'):
+			baxter_interface.Head().set_pan(0.9)
+			self.soundhandle.say('Martin, I think we should have a short break.')
+			time.sleep(4)
+			baxter_interface.Head().set_pan(0.4)
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Do you know the answer to these trivia questions?')
+			time.sleep(1)
+
+		elif(data.data=='04'):
+			print 'null'
+			#hand controller to students in break time
+
+		elif(data.data=='05'):
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('Do you feel there is a difference between')
+			time.sleep(3)
+			self.soundhandle.say('Engineering and science?')
+			time.sleep(3)
+			self.soundhandle.say('Research and development?')
+			time.sleep(2)
+			self.soundhandle.say('If so, what?')
+			time.sleep(1)
+
+	
+		elif(data.data=='06'):
+
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('Can you recognize these common electronics parts?')
+			time.sleep(4)
+			self.soundhandle.say('And these common algorithms used for intelligent systems?')
+
+		elif(data.data=='07'):
+
+			self.face_pub.publish(self.quizFace)
+			time.sleep(0.5)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('Can you fill in the truth table for OR?') 
+			time.sleep(4)
+			self.soundhandle.say('And, can you write the statements shown using logic symbols?') 
+			time.sleep(5)
+			self.soundhandle.say('(Also, do you know the names of the rules of inference used above? Great if you do!)') 
+			time.sleep(2)
+			self.soundhandle.say('Please try to write the expression with A and B using logic gates. Can you write it without OR?') 
+			time.sleep(5)
+			self.soundhandle.say('For the state machines, which strings do they accept?') 
+			time.sleep(2)
+
+
+		elif(data.data=='08'):
+
+			self.soundhandle.say('Sure Martin, I will show some images of the charts whose names you say') 
+			time.sleep(7)
+			self.face_pub.publish(self.vennFace)
+			time.sleep(5)
+			self.face_pub.publish(self.histFace)
+			time.sleep(5)
+			self.face_pub.publish(self.pieFace)
+			time.sleep(5)
+			self.face_pub.publish(self.ganttFace)
+			time.sleep(5)
+			self.face_pub.publish(self.neutralFace)
+
+		elif(data.data=='09'):
+
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Excuse me, Martin') 
+			time.sleep(2)
+			self.soundhandle.say('You have forgotten to talk about statistical significance tests') 
+			time.sleep(2)
+
+
+		elif(data.data=='10'):
+
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('Do you think accuracy would be a good metric for evaluating a cancer screening system? Why or why not?') 
+			time.sleep(9)
+			self.soundhandle.say('Also if f on the slide is big Oh of g, what would be g?') 
+			time.sleep(5)
+
+		elif(data.data=='11'):
+
+			self.soundhandle.say('Thank you everyone for attending the lecture today.') 
+			time.sleep(7)
+			self.soundhandle.say('I am going to sleep now. Goodbye!') 
+			time.sleep(7)			
+			print 'arm wave'
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			sleep(1)
+    			self.left_limb.move_to_joint_positions(self.leftArmHighPose)
+			for ind in range(2):
+    				self.left_limb.move_to_joint_positions(self.leftArmHighPose2)
+    				#sleep(0.5)
+   				self.left_limb.move_to_joint_positions(self.leftArmHighPose)
+    				#sleep(0.5)
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			sleep(2)
+
+			self.face_pub.publish(self.blinkFace)
+			sleep(2)
+
+		elif(data.data=='20'):
+
+			self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+			self.soundhandle.say('Hello everyone! Welcome back to the second lecture, with some basic tips and information! ') 
+			time.sleep(2)	
+			for ind in range(2):
+
+				self.right_limb.move_to_joint_positions(self.rightArmGreetingPose2)
+
+				self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			sleep(2)
+			self.soundhandle.say('Are you all ready to try some more quizzes today?') 
+			baxter_interface.Head().set_pan(-0.2)
+			time.sleep(1)
+			baxter_interface.Head().set_pan(0.9)
+			time.sleep(1)
+			baxter_interface.Head().set_pan(0.4)
+
+		elif(data.data=='21'):
+
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('Do you know the common circuit components referred to by these symbols?') 
+			time.sleep(6)
+			self.soundhandle.say('And, can you describe the common concepts and circuits below?') 
+			time.sleep(2)
+
+		elif(data.data=='22'):
+
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('What are the names of these connectors?') 
+			time.sleep(2)
+		elif(data.data=='23'):
+
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('What is (13) base 10 in binary? What is (31) base 10 in hex-a-decimal?') 
+			time.sleep(8)
+			self.soundhandle.say('Which figure is big-endian, left or right?') 
+			time.sleep(2)
+		elif(data.data=='24'):
+
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('Please find the eigenvalues and eigenvectors of matrix A.') 
+			time.sleep(6)
+			self.soundhandle.say('And, please find x to minimize Ax minus b squared.') 
+			time.sleep(5)
+			self.soundhandle.say('(Hint: try setting the derivative to zero to find a minimum)') 
+			time.sleep(2)
+		elif(data.data=='25'):
+
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Martin, I think it is time for a little break.') 
+			time.sleep(5)
+			self.soundhandle.say('Let us stretch our arms, and if you have them, legs.') 
+			time.sleep(7)
+			#get Baxter to stretch arms, make a yawning sound
+
+			self.left_limb.move_to_joint_positions(self.leftArmGreetingPose1)
+			self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+			time.sleep(2)
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+			self.soundhandle.say('Please check out the questions on the slide. We will look at the answers when we are back.') 
+			time.sleep(2)			
+			#self.right_gripper.calibrate()
+		elif(data.data=='26'):
+			print 'programming languages'
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('Do you know what the names of these programming languages here are?')
+			time.sleep(2)
+		elif(data.data=='27'):
+			print 'auto-support'
+			self.soundhandle.say('Martin, I am listening now!') 
+			time.sleep(5)
+			self.speechRecognitionFlag = True
+		elif(data.data=='28'):
+			print 'alert'
+			self.soundhandle.say('Martin, this is not clear. Can you please give some examples?') 
+			time.sleep(2)
+		elif(data.data=='29'):
+			print 'remote'
+			cap = cv2.VideoCapture('/home/turtlebot/ros_ws/src/opencv_db_ros/scripts/IMG_0455.MOV')
+			self.soundhandle.say("Hello, my name is Erina Cooney. Martin told me that you are in the master's program and about to start research, and said you might be interested in hearing about others' experiences, so I will talk a little bit about my experience doing the master's program in a different country, Japan. In Japan usually students do research for one year as undergraduates, then two years during the master's program, for a total of three years. My research topic was, where does the feeling of a person's presence come from? I broke down human behavior into constituent components: appearance, movements, way of speaking, etc. Then I did an experiment with 60 people using three devices: a speaker where only voice is transmitted, a teleconferencing display where voice and appearance were transmitted, and a human-like android robot where voice, appearance, and movements were transmitted, using face tracking software and motion capture. Participants filled in questionnaires, which were processed with R and Excel. We found that the appearance of a human was important for transmitting their presence, suggesting the usefulness of android robots which resemble humans. This project took a lot of time. I heard that in Sweden you will only have six months, but I think that if you plan carefully you will be able to do a very worthwhile project. Good luck!") 
+			#time.sleep(2)
+			while(cap.isOpened()):
+				ret, frame = cap.read()
+				print ret
+				if ret==False:
+					print "video ended"
+					break
+				resized_frame = cv2.resize(frame, (1024, 600))
+
+				#gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+				#cv2.imshow('frame',gray)
+				currentFace = cv_bridge.CvBridge().cv2_to_imgmsg(resized_frame, encoding="bgr8")
+				self.face_pub.publish(currentFace)
+				#cv2.imshow('extra',frame)
+				#sleep(0.05)
+				cv2.waitKey(3)
+				#if cv2.waitKey(1) & 0xFF == ord('q'):
+				#	break
+
+			cap.release()
+			#cv2.destroyWindow('extra')
+
+		elif(data.data=='30'):
+			print 'handing'
+
+		elif(data.data=='31'):
+			self.soundhandle.say('Thank you for coming today, and have a nice weekend!') 
+			time.sleep(2)
+			self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+			for ind in range(2):
+
+				self.right_limb.move_to_joint_positions(self.rightArmGreetingPose2)
+
+				self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			sleep(2)
+			self.soundhandle.say('I will go to sleep now!') 
+			time.sleep(2)
+			self.face_pub.publish(self.blinkFace)
+			sleep(2)
+
+
+
+
+		#DAY 3
+		elif(data.data=='40'):
+			#changed 9/20
+			print 'hello'
+			self.face_pub.publish(self.neutralFace)
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+
+			self.face_pub.publish(self.happyFace)
+			#<Action put up hand in greeting, smile>
+			#self.soundhandle.say("Hello, my name is Baxter, and I am a social robot. What's your name?")
+			self.soundhandle.say("Very welcome everyone to Researcher Friday!")
+			self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			#sleep(2)
+		
+			#self.soundhandle.say("Very welcome everyone to Researcher Friday!")
+			#baxter_interface.Head().set_pan(-0.9)
+			#time.sleep(1)
+			#baxter_interface.Head().set_pan(0.9)
+			#time.sleep(1)
+			#baxter_interface.Head().set_pan(0.4)
+			#time.sleep(1)
+			#self.face_pub.publish(self.neutralFace)
+			self.rs.disable()
+			'''
+			print 'hello'
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+
+			self.face_pub.publish(self.happyFace)
+			#<Action put up hand in greeting, smile>
+			self.soundhandle.say('Hello, welcome to day three of the DEIS course')
+			self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			sleep(2)
+		
+			self.soundhandle.say("Martin, what's in store today?")
+			baxter_interface.Head().set_pan(0.9)
+			time.sleep(5)
+			baxter_interface.Head().set_pan(0.4)
+			time.sleep(1)
+
+			self.face_pub.publish(self.neutralFace)
+			'''
+
+		elif(data.data=='41'):
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('What are the eigenvalues, and eigenvectors, of matrix, "Ayy"?') 
+			time.sleep(5)
+			self.soundhandle.say('Also, what is the Jacobian, and the determinant of the Jacobian?') 
+			time.sleep(2)
+
+		elif(data.data=='42'):
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('What features can be used to discriminate between these images?') 
+			time.sleep(2)
+		elif(data.data=='43'):
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('What are the, L zero, L one, L two, and L infinity norms for the vector shown? And, what is the, Hamming distance between these two strings?')
+			time.sleep(2)
+		elif(data.data=='44'):
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('What would be the class given to this new point with the question mark if k were equal to one? What would be the class if k equals three? Also, do you know the name of the function, on the right?') 
+			time.sleep(2)
+		elif(data.data=='45'):
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('How would you interpret this confusion matrix?') 
+			time.sleep(2)
+
+
+
+		elif(data.data=='46'):
+			#self.soundhandle.say('facerec') 
+			time.sleep(2)
+			'''
+			self.soundhandle.say("Please don't move right now while I reset")
+			time.sleep(5)
+			self.soundhandle.say('Please wave your hands now for yes!')
+			self.firstFrame= None
+			time.sleep(5)
+			self.soundhandle.say('Please wave your hands now for no!')
+			self.firstFrame= None
+			time.sleep(5)
+			'''
+			#self.firstFrame= None
+			#time.sleep(5)
+			#self.soundhandle.say('Please wave your hand if you would like to go deeper?') 
+			#time.sleep(2)
+
+
+		elif(data.data=='47'):
+			self.face_pub.publish(self.quizFace)
+			self.soundhandle.say('Quiz time!') 
+			time.sleep(2)
+			self.soundhandle.say('Which answer do you think a scientist might prefer?') 
+			time.sleep(2)
+		elif(data.data=='48'):
+			#self.soundhandle.say('remote')
+			time.sleep(2)
+		elif(data.data=='49'):
+			self.soundhandle.say("Do you want to explore deeper into today's topics? The design of embedded and intelligent systems is such a broad area that it is hard to find any one source which would be the best for extra learning. Wikipedia and stackoverflow are very useful for looking up questions. For embedded systems, one of the students last year recommended a book by Koopman called Better Embedded System Software. For intelligent systems, two nice books on pattern recognition are available from Duda and Hart, another from Bishop. Please let me know if you come across some nice sources also!") 
+			time.sleep(2)
+		elif(data.data=='50'):
+			self.soundhandle.say("Hey Martin, it's about time to get ready to go visit Fablab!") 
+			baxter_interface.Head().set_pan(0.9)
+			time.sleep(5)
+			baxter_interface.Head().set_pan(0.4)
+			time.sleep(2)
+		elif(data.data=='51'):
+			self.soundhandle.say('Thank you for coming today! I will not see you tomorrow so have a nice weekend!') 
+			time.sleep(2)
+			self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+			for ind in range(2):
+
+				self.right_limb.move_to_joint_positions(self.rightArmGreetingPose2)
+
+				self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			sleep(2)
+			self.soundhandle.say('I will go to sleep now!') 
+			time.sleep(2)
+			self.face_pub.publish(self.blinkFace)
+			sleep(2)
+
+		elif(data.data=='60'):
+			
+			self.t1.start()
+			self.t2.start()
+			self.t3.start()
+			self.t4.start()
+			self.t5.start()
+			time.sleep(2)
+
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+
+			self.face_pub.publish(self.happyFace)
+			#<Action put up hand in greeting, smile>
+			self.soundhandle.say('Hello everyone! Welcome to class five!') 
+			self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			sleep(2)
+		
+			self.soundhandle.say("Martin, what's in store today?")
+			baxter_interface.Head().set_pan(0.9)
+			time.sleep(5)
+			baxter_interface.Head().set_pan(0.4)
+			time.sleep(1)
+
+			self.face_pub.publish(self.neutralFace)
+
+		elif(data.data=='61'):
+			self.soundhandle.say('Today you will spend some time thinking about intelligent robotics. From about 10:15 to 10:30 you will get your robots... From about 10:30 to 11:00 you will study basic robotics... First Martin will talk for fifteen minutes... Then you will have a chance to explore on your own for fifteen minutes and take quizzes... From 11:00 to 11:30 you will study image processing... First Martin will talk for fifteen minutes... Then you will have a chance to explore on your own for fifteen minutes and take quizzes. From 11:30 to 11:45 there will be some last comments and the class will end.') 
+			time.sleep(40)
+			self.soundhandle.say("Regarding roles, my role is to try to support learning by giving quizzes to provide practical examples and also make the teacher's job easier, providing more information like visuals, alerting and reminding, being remotely controlled, and interacting physically like by handing out things. Martin's role is also to help support learning, as course responsible. Your goal is to revisit some old concepts and try to gain some new knowledge, with active learning encouraged.")
+			time.sleep(2)
+		elif(data.data=='62'):
+			self.face_pub.publish(self.sensorsquiz1Face)
+			self.soundhandle.say('What are the names of these kinds of sensors?') 
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.sensorsquiz1AnsFace)
+			time.sleep(2)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.quizFace)
+		elif(data.data=='63'):
+			self.face_pub.publish(self.sensorsquiz2Face)
+			self.soundhandle.say('What sensor could a robot use to sense its pose? Also, what does a gyro sensor measure? What does a Hall effect sensor measure?')  
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.sensorsquiz2AnsFace)
+			time.sleep(2)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.quizFace)
+
+		elif(data.data=='64'):
+			self.face_pub.publish(self.actuatorsquizFace)
+			self.soundhandle.say("What are the names of these kinds of actuators? And what are the names of these problems? Ayyyy: Given the joint angles of a robot arm, where is the end effector? Beee: Given the position of an end effector, what are the joint angles for a robot arm?")
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.actuatorsquizAnsFace)
+			time.sleep(2)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.quizFace)
+
+		elif(data.data=='65'):
+			self.face_pub.publish(self.improcquizFace)
+			self.soundhandle.say('What are the names of these image processing concepts?') 
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.improcquizAnsFace)
+			time.sleep(2)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.quizFace)
+
+		elif(data.data=='66'):
+			self.face_pub.publish(self.improcquiz2Face)
+			self.soundhandle.say('What are some of the ways in which you could use image processing to calculate the distance from one robot on a track, to a robot in front of it?') 
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.improcquiz2AnsFace)
+			time.sleep(2)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.face_pub.publish(self.quizFace)
+
+		elif(data.data=='67'):
+			self.soundhandle.say('What are basic differences between these concepts?')
+			time.sleep(2)
+			'''
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+
+			#self.right_limb.move_to_joint_positions(self.rightThrowPose1)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+
+			self.right_limb.set_joint_position_speed(1.0)
+			self.right_limb.move_to_joint_positions(self.rightThrowPose2)
+			#self.right_limb.move_to_joint_positions(self.rightThrowPose1)
+			#time.sleep(2)
+			self.right_limb.set_joint_position_speed(0.3)
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+			'''
+		elif(data.data=='68'):
+			self.soundhandle.say('The following students completed quizzes') 
+			time.sleep(4)
+			#throw the dice
+			#self.left_limb.set_joint_position_speed(0.6)
+			#self.left_limb.move_to_joint_positions(self.leftArmGreetingPose1)
+			#time.sleep(2)
+			#self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+			#self.left_limb.set_joint_position_speed(0.6)
+			FILE_TO_CHECK = "/home/turtlebot/students.txt"
+			f=open(FILE_TO_CHECK,'r')
+			l=list(f) #f.read()
+			f.close()
+			#for listItem in range(l):
+			for aRow in l:
+				aName = aRow.rstrip()
+				#firstName= l[0].rstrip()
+				print aName
+				self.soundhandle.say(aName)
+				time.sleep(4)
+			self.soundhandle.say('Congratulations to you!') 
+			time.sleep(2)
+			self.face_pub.publish(self.happyFace)
+			time.sleep(2)
+
+		elif(data.data=='69'):
+			#toggle robot looking on or off
+			#self.soundhandle.say('hello') 
+			#time.sleep(2)
+			if (self.imageFlag == False):
+				self.imageFlag = True
+				self.soundhandle.say("Please don't move right now while I reset")
+
+				time.sleep(5)
+				self.firstFrame= None
+				self.soundhandle.say('Now I will try to look at people who move')
+				
+				#print "yes"
+				time.sleep(5)
+			else:		
+				self.imageFlag = False
+				self.soundhandle.say('Not looking anymore')
+				self.firstFrame= None
+				self.face_pub.publish(self.neutralFace)
+			#self.t1.start()
+			#self.t2.start()
+			#self.t3.start()
+			#self.t4.start()
+			#self.t5.start()
+		elif(data.data=='70'):
+			#handing out stuff
+			#DAY 1
+			#handout
+			print 'handing something out'
+			self.soundhandle.say('Martin, please give me something to hand out') 
+			#time.sleep(2)
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+			self.right_gripper.open()
+			time.sleep(1)
+			self.right_limb.move_to_joint_positions(self.rightArmFetchPose)
+			time.sleep(1)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.right_gripper.close()
+			time.sleep(1)
+
+			self.right_limb.move_to_joint_positions(self.rightArmDeliverPose)
+			time.sleep(1)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			self.soundhandle.say('Here you go') 
+			self.right_gripper.open()
+			time.sleep(0.5)
+			while ((not rospy.is_shutdown()) and (self.b.state==0)):
+				print '.'
+				time.sleep(0.01)
+			#time.sleep(2)
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+			time.sleep(1)
+			print 'done'
+
+
+		elif(data.data=='71'):
+
+			self.soundhandle.say('Thank you for attending the DEIS lecture! My time as a teaching assistant this year is now over. I will take with me all the advice you have given me, and use it to be more useful next year! Please have a very worthwhile time in the remainder of the course!') 
+			self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+			for ind in range(2):
+
+				self.right_limb.move_to_joint_positions(self.rightArmGreetingPose2)
+
+				self.right_limb.move_to_joint_positions(self.rightArmGreetingPose1)
+
+			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			sleep(2)
+			self.soundhandle.say('Farewell!') 
+			time.sleep(2)
+			self.face_pub.publish(self.blinkFace)
+			sleep(2)
+
+
+		elif(data.data=='80'):
+        		#enable
+ 			print 'enable'
+			self.rs.enable()
+		elif(data.data=='81'):
+        		#disable
+ 			print 'disable'
+			self.rs.disable()
+		elif(data.data=='82'):
+        		#head left
+			if(self.processingFacesFlag == False):
+				self.processingFacesFlag = True
+				self.soundhandle.say('Started recognizing people') 
+				time.sleep(2)
+			else:
+				self.processingFacesFlag = False
+				self.face_pub.publish(self.neutralFace)
+				self.soundhandle.say('Stopped recognizing people') 
+				time.sleep(2)
+ 			#print 'head left'
+			#baxter_interface.Head().set_pan(0.9)
+			#time.sleep(1)
+		elif(data.data=='83'):
+			if(self.showFaces == False):
+				self.showFaces = True
+			else:
+				self.showFaces = False
+
+        		#head neutral
+			#print 'head neutral'
+			#baxter_interface.Head().set_pan(0.0)
+			#time.sleep(1)
+		elif(data.data=='84'):
+        		#head right
+			print 'head right'
+			baxter_interface.Head().set_pan(-0.9)
+			time.sleep(1)
+		elif(data.data=='85'):
+        		#face happy
+			print 'face happy'
+			self.face_pub.publish(self.happyFace)
+			time.sleep(0.5)
+		elif(data.data=='86'):
+        		#face neutral
+			print 'face neutral'
+			self.face_pub.publish(self.neutralFace)
+			time.sleep(1)
+		elif(data.data=='87'):
+			#close right gripper	
+ 			print 'close right gripper'
+			self.right_gripper.close()
+		elif(data.data=='88'):
+			#open right gripper
+ 			print 'open right gripper'
+			self.right_gripper.open()
+		elif(data.data=='89'):
+ 			print 'calibrate right gripper'	
+			self.right_gripper.calibrate()
+		elif(data.data=='90'):
+			#arm neutral
+ 			print 'arms neutral'
+    			self.right_limb.move_to_joint_positions(self.rightArmNeutralPose)
+    			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			sleep(5)
+		elif(data.data=='91'):
+			#arm wave
+ 			print 'arm wave'
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			sleep(1)
+    			self.left_limb.move_to_joint_positions(self.leftArmHighPose)
+    			#sleep(1.5)
+			for ind in range(2):
+    				self.left_limb.move_to_joint_positions(self.leftArmHighPose2)
+    				#sleep(0.5)
+   				self.left_limb.move_to_joint_positions(self.leftArmHighPose)
+    				#sleep(0.5)
+			self.left_limb.move_to_joint_positions(self.leftArmNeutralPose)
+    			sleep(2)
+
+		elif(data.data=='92'):
+			#arm wave
+ 			print 'read arm angles'
+			angles = self.right_limb.joint_angles()
+			print angles
+			angles = self.left_limb.joint_angles()
+			print angles
+		elif(data.data=='93'):
+ 			print 'unregistered'
+			self.soundhandle.say('Test sound') 
+			time.sleep(2)			
+		elif(data.data=='94'):
+        		#head center left
+ 			print 'head center-left'
+			baxter_interface.Head().set_pan(0.4)
+			time.sleep(1)
+		elif(data.data=='95'):
+			print 'unregistered'
+			#self.face_pub.publish(self.blinkFace)
+			self.firstFrame= None
+			#sleep(2)
+		elif(data.data=='96'):
+			#print 'turn speech rec off!'
+			#self.speechRecognitionFlag = False #used day2 commented day 3
+			print 'toggle image processing'
+        		if (self.imageFlag == True):
+        			self.imageFlag = False
+				self.face_pub.publish(self.neutralFace)
+        		else:
+        			self.imageFlag = True
+
+			#arms neutral
+			#self.right_limb.move_to_neutral()
+        		#self.left_limb.move_to_neutral()
+		elif(data.data=='97'):
+ 			#print '97'
+ 			#print 'unregistered'
+			self.face_pub.publish(self.happyFace)
+			self.soundhandle.say('Perfect! All correct!') 
+			time.sleep(2)
+		elif(data.data=='98'):
+ 			#print 'unregistered'
+			self.face_pub.publish(self.happyFace)
+			self.soundhandle.say('Nice! Almost all correct!') 
+			time.sleep(2)
+
+		elif(data.data=='99'):
+ 			#print 'unregistered'
+			self.face_pub.publish(self.neutralFace)
+			self.soundhandle.say('Okay, this material will be nice to review') 
+			time.sleep(2)	
+
+
+
+
+		time.sleep(0.01)
+
+def sleep(t):
+	try:
+        	rospy.sleep(t)
+	except KeyboardInterrupt:
+		sys.exit()
+	except:
+		pass
+
+def listener():
+	
+	rospy.init_node('bax', anonymous=True)
+	my_bax = martin_baxter_interface()
+
+	'''
+	rospy.Subscriber('to_baxter', String, callback)
+	pub= rospy.Publisher('from_baxter', String, queue_size=10)	
+	r=rospy.Rate(10)
+	r.sleep()
+
+	#set up our variables
+	b=DIO.DigitalIO('torso_right_button_ok');
+	soundhandle = SoundClient()
+	notDone = 1
+	count = 0
+
+	#for enabling
+	rs = baxter_interface.RobotEnable(CHECK_VERSION)
+
+	#no left gripper #left = baxter_interface.Gripper('left', CHECK_VERSION)
+	right = baxter_interface.Gripper('right', CHECK_VERSION)
+
+	#for the robot's display
+	face_pub = rospy.Publisher('/robot/xdisplay', Image, latch=True, queue_size=1)
+	img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_4_happy2.png")
+	happyFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+	img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_3_neutral2.png")
+	neutralFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+	#baxter_interface.Head().set_pan(-0.9)
+	'''
+
+	while not rospy.is_shutdown():
+		my_bax.r.sleep()
+
+'''
+    	#define right arm poses
+	rightArmNeutralPose = {'right_s0': 1.0369710126105396, 'right_s1': -0.1614514779249398, 'right_w0': 0.25579129637989273, 'right_w1': -0.10891263593986437, 'right_w2': 0.0, 'right_e0': 0.04295146206079158, 'right_e1': 1.749121593386343}
+
+	rightArmUpALittlePose = {'right_s0': 1.0062913968528313, 'right_s1': -1.0342865462317403, 'right_w0': 0.25617479157686407, 'right_w1': 0.045252433242619704, 'right_w2': -0.0003834951969713534, 'right_e0': 0.044485442848677, 'right_e1': 2.4470828518742063}
+
+	rightArmSidePose = {'right_s0': -0.22702915660704123, 'right_s1': -1.0484758685196802, 'right_w0': 0.22702915660704123, 'right_w1': -1.292378813793461, 'right_w2': 0.0003834951969713534, 'right_e0': -0.19251458887961942, 'right_e1': 2.2208206856611077}
+
+	rightArmFrontOfferingPose = {'right_s0': 0.6626797003664987, 'right_s1': -1.0381214982014537, 'right_w0': -0.0732475826215285, 'right_w1': -1.3963060121726978, 'right_w2': -0.0003834951969713534, 'right_e0': 0.23584954613738238, 'right_e1': 2.249582825433959}
+
+	limb = baxter_interface.Limb('right')
+	angles = limb.joint_angles()
+	print angles
+
+	s = '0'
+
+    	#set up robot's initial state just in case
+    	pub.publish(neutralFace)
+    	sleep(1)
+    	baxter_interface.Head().set_pan(0.0)
+    	sleep(1)
+    	limb.move_to_joint_positions(rightArmNeutralPose)
+    	sleep(5)
+'''
+
+
+
+
+'''
+    #start main loop
+    while (not rospy.is_shutdown()):
+      #wait until the table has sent us a message
+      while ((not rospy.is_shutdown()) and (s[0]=='0')):
+        print '.'
+        r.sleep()
+        f=open('/home/turtlebot/messagesFromTable','r')
+        s=f.read()
+        f.close()
+
+      if (not rospy.is_shutdown()):_pub
+        print 'person has come in front of the robot'
+        pub.publish(happyFace)
+        #sleep(1)
+        soundhandle.say('hello')
+        sleep(1)
+        soundhandle.say(s)
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/hello.wav')
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmUpALittlePose)
+        sleep(3)
+
+      if (not rospy.is_shutdown()):
+        print 'get a bag'
+        baxter_interface.Head().set_pan(-0.9)
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmSidePose)
+        #sleep(5)
+        soundhandle.say('May I have a bag, please?')
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav')
+        #sleep(2)
+        #waits until the button on the robot is pressed, just in case
+      while ((not rospy.is_shutdown()) and (b.state==0)):
+        print '.'
+        r.sleep()
+
+      if (not rospy.is_shutdown()):
+        print 'bye'
+        baxter_interface.Head().set_pan(0.0)
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmFrontOfferingPose)
+        #sleep(5)
+        soundhandle.say('There you go, have a good day!')
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/there_you_go.wav')
+        sleep(5)
+        #while (b.state==0):
+        #  print '.'
+        #  r.sleep()
+
+      if (not rospy.is_shutdown()):
+        print 'back to waiting'
+        limb.move_to_joint_positions(rightArmNeutralPose)
+        sleep(5)
+        pub.publish(neutralFace)
+        #write table we have finished
+        f=open('/home/turtlebot/messagesFromTable','w')
+        s=f.write('0')
+        f.close()
+        s = '0'
+        sleep(1)
+
+    if (rospy.is_shutdown()):
+      print 'ros has been shut down. bye!'      
+
+'''
+
+if __name__== '__main__':
+
+    	print '-------------------------------------'
+    	print '-Baxter ridgeback simple demo python-'
+    	print '-   DEC 2016, HH, Martin            -'
+    	print '-------------------------------------'
+
+	try:
+		listener()
+	except rospy.ROSInterruptException:
+		pass
+	finally:
+		pass
+

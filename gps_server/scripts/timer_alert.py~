@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+import rospy
+import numpy as np
+import cv2
+import cv_bridge
+import time
+from sensor_msgs.msg import (
+    Image,
+)
+from std_msgs.msg import String
+import threading
+
+class martins_timer:
+	def __init__(self):
+
+		self.sub = rospy.Subscriber('to_timer', String, self.alert_callback)
+		self.pub = rospy.Publisher('from_timer', String, queue_size=10)
+
+		self.r=rospy.Rate(10)
+		self.r.sleep()
+		self.runFlag = True
+
+	def alert_callback(self, msg):
+		print data.data
+		if(self.runFlag == False):
+			print "heard something but ignoring"
+		else:
+			if(data.data=='switch'):
+				print "doing something"
+
+		time.sleep(0.01)
+
+	def tell_master_it_is_time(self):
+		print "timer called!"
+
+
+def sleep(t):
+	try:
+		rospy.sleep(t)
+	except KeyboardInterrupt:
+		sys.exit()
+	except:
+		pass
+
+
+def main():
+
+	rospy.init_node('timer_alert', anonymous=True)
+	my_timer = martins_timer()
+
+	print '-------------------------------------'
+	print '-        timer alert                -'
+	print '-   SEP 2017, HH, Martin            -'
+	print '-------------------------------------'
+
+
+	t1 = threading.Timer(1.0, my_timer.tell_master_it_is_time)
+	t1.start()
+
+	while not rospy.is_shutdown():
+		my_timer.r.sleep()
+		#check the time, if it is a certain time send a message to main program that we should alert the teacher
+
+
+	quit()
+    
+if __name__ == '__main__':
+	main()
+
+
+
+

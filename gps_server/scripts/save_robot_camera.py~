@@ -1,0 +1,80 @@
+import rospy
+import numpy as np
+import cv2
+import cv_bridge
+import time
+from sensor_msgs.msg import (
+    Image,
+)
+
+class martin_baxter_interface:
+    def __init__(self):
+        image_topic = "/cameras/left_hand_camera/image"
+        self.sub = rospy.Subscriber(image_topic, Image, self.image_callback)	
+	self.r=rospy.Rate(10)
+	self.r.sleep()
+        self.bridge = cv_bridge.CvBridge()
+
+        fourcc = cv2.cv.CV_FOURCC(*'DIVX')
+        self.out = cv2.VideoWriter('robottry.avi',fourcc, 20.0, (640,480))
+
+    def image_callback(self, msg):
+    	print("Received an image!")
+    	try:
+            cv2_img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        except cv_bridge.CvBridgeError, e:
+            print(e)
+        else:
+            self.out.write(cv2_img)
+            #cv2.imwrite('camera_image.jpeg', cv2_img)
+            #out.write(frame)
+            #cv2.imshow('frame',frame)
+
+	time.sleep(0.01)
+
+
+def sleep(t):
+    try:
+        rospy.sleep(t)
+    except KeyboardInterrupt:
+	sys.exit()
+    except:
+	pass
+
+
+def main():
+
+    rospy.init_node('record_baxter_video', anonymous=True)
+    my_bax = martin_baxter_interface()
+
+    print '-------------------------------------'
+    print '-record video from Baxter camera    -'
+    print '-   JAN 2017, HH, Martin            -'
+    print '-------------------------------------'
+
+    while not rospy.is_shutdown():
+        my_bax.r.sleep()
+    '''
+    image_topic = "/cameras/left_hand_camera/image"
+    my_bax = martin_baxter_interface()
+
+    fourcc = cv2.cv.CV_FOURCC(*'DIVX')
+    out = cv2.VideoWriter('output.avi',fourcc, 20.0, (640,480))
+
+    rospy.Subscriber(image_topic, Image, image_callback)
+    rospy.spin()
+
+
+    #cap.release()
+    out.release()
+    cv2.destroyAllWindows()
+    '''
+
+    quit()
+    
+if __name__ == '__main__':
+    main()
+
+
+
+

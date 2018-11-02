@@ -1,0 +1,194 @@
+#!/usr/bin/env python
+
+import rospy, os, sys
+from sound_play.msg import SoundRequest
+
+from sound_play.libsoundplay import SoundClient
+
+#from control_msgs.msg import DigitalIOState
+
+#import control_msgs
+import baxter_interface.digital_io as DIO
+import baxter_interface
+
+import argparse
+
+import cv2
+import cv_bridge
+
+from sensor_msgs.msg import (
+    Image,
+)
+
+
+def send_image(path):
+    """
+    Send the image located at the specified path to the head
+    display on Baxter.
+
+    @param path: path to the image file to load and send
+    """
+
+    # Sleep to allow for image to be published.
+    rospy.sleep(1)
+
+
+
+
+def sleep(t):
+    try:
+        rospy.sleep(t)
+    except:
+        pass
+
+
+def CallBack(msg):
+  print '----------------'
+  print msg
+  if msg.state==1:
+    print 'GOTCHA'
+
+
+if __name__ == '__main__':
+    rospy.init_node('soundplay_test', anonymous = True)
+
+    print '----------------'
+    b=DIO.DigitalIO('torso_right_button_ok');
+    r=rospy.Rate(10);
+    soundhandle = SoundClient()
+    notDone = 1
+    count = 0
+    pub = rospy.Publisher('/robot/xdisplay', Image, latch=True, queue_size=1)
+
+    img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_4_happy2.png")
+    happyFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+    img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_3_neutral2.png")
+    neutralFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+  
+    #define right arm poses
+    rightArmNeutralPose = {'right_s0': 1.0369710126105396, 'right_s1': -0.1614514779249398, 'right_w0': 0.25579129637989273, 'right_w1': -0.10891263593986437, 'right_w2': 0.0, 'right_e0': 0.04295146206079158, 'right_e1': 1.749121593386343}
+
+    rightArmUpALittlePose = {'right_s0': 1.0062913968528313, 'right_s1': -1.0342865462317403, 'right_w0': 0.25617479157686407, 'right_w1': 0.045252433242619704, 'right_w2': -0.0003834951969713534, 'right_e0': 0.044485442848677, 'right_e1': 2.4470828518742063}
+
+    rightArmSidePose = {'right_s0': -0.22702915660704123, 'right_s1': -1.0484758685196802, 'right_w0': 0.22702915660704123, 'right_w1': -1.292378813793461, 'right_w2': 0.0003834951969713534, 'right_e0': -0.19251458887961942, 'right_e1': 2.2208206856611077}
+
+    rightArmFrontOfferingPose = {'right_s0': 0.6626797003664987, 'right_s1': -1.0381214982014537, 'right_w0': -0.0732475826215285, 'right_w1': -1.3963060121726978, 'right_w2': -0.0003834951969713534, 'right_e0': 0.23584954613738238, 'right_e1': 2.249582825433959}
+
+
+    limb = baxter_interface.Limb('right')
+    angles = limb.joint_angles()
+    print angles
+
+    #set up just in case
+    pub.publish(neutralFace)
+    sleep(1)
+    baxter_interface.Head().set_pan(0.0)
+    sleep(1)
+    limb.move_to_joint_positions(rightArmNeutralPose)
+    sleep(5)
+    #should have some output to show robot is ready
+    while (b.state==0):
+      print '.'
+      r.sleep()
+
+    print 'person has come in front of the robot'
+    pub.publish(happyFace)
+    #sleep(1)
+    soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/hello.wav')
+    #sleep(2)
+    limb.move_to_joint_positions(rightArmUpALittlePose)
+    sleep(5)
+
+    print 'get a bag'
+    baxter_interface.Head().set_pan(-0.9)
+    #sleep(2)
+    limb.move_to_joint_positions(rightArmSidePose)
+    sleep(5)
+    soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav')
+    #sleep(2)
+    while (b.state==0):
+      print '.'
+      r.sleep()
+
+    print 'bye'
+    baxter_interface.Head().set_pan(0.0)
+    sleep(2)
+    limb.move_to_joint_positions(rightArmFrontOfferingPose)
+    sleep(5)
+    soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/there_you_go.wav')
+    sleep(2)
+    while (b.state==0):
+      print '.'
+      r.sleep()
+
+    print 'back to waiting'
+    limb.move_to_joint_positions(rightArmNeutralPose)
+    sleep(5)
+    pub.publish(neutralFace)
+    sleep(1)
+
+
+    #limb2 = baxter_interface.Limb('left')
+    #angles = limb2.joint_angles()
+    #print angles
+
+    #send_image()
+
+
+'''
+    while (notDone):
+      while (b.state==0):
+        print '.'
+        r.sleep()
+
+      print 'PRESSED'
+      soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/hello.wav')
+      sleep(2)
+
+      soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav')
+      sleep(2)
+
+      while (b.state==0):
+        print '.'
+        r.sleep()
+
+      print 'PRESSED'
+      soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/there_you_go.wav')
+      sleep(2)
+
+      count+=1
+      if count > 0:
+        notDone=0
+
+
+    #sub_msg= rospy.Subscriber('/robot/digital_io/right_button_ok/state', baxter_core_msgs.msg.DigitalIOState, CallBack)
+    #rospy.spin()
+
+    #
+
+    #rospy.sleep(1)
+    
+    #soundhandle.stopAll()
+
+    #print "This script will run continuously until you hit CTRL+C, testing various sound_node sound type    #print 'bye'
+    #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/there_you_go_have_a_good_day.wav')
+    #sleep(5)s."
+
+    #print
+   
+    #print 'hello'
+    #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/hello.wav')
+    #sleep(5)
+
+    #print 'bag'
+    #s2 = soundhandle.waveSound("/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav")
+    #s2.play()       
+    #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav')
+    #sleep(5)
+    #s2.stop()
+
+    #print 'bye'
+    #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/there_you_go_have_a_good_day.wav')
+    #sleep(5)
+'''
+

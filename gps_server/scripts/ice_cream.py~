@@ -1,0 +1,184 @@
+#!/usr/bin/env python
+
+import rospy, os, sys
+from sound_play.msg import SoundRequest
+from sound_play.libsoundplay import SoundClient
+
+import baxter_interface.digital_io as DIO
+import baxter_interface
+from baxter_interface import CHECK_VERSION
+
+import argparse
+
+import cv2
+import cv_bridge
+
+from sensor_msgs.msg import (
+    Image,
+)
+
+def sleep(t):
+    try:
+        rospy.sleep(t)
+    except KeyboardInterrupt:
+        sys.exit()
+    except:
+        pass
+
+
+
+def mainLoop():
+
+    #set up our variables
+    b=DIO.DigitalIO('torso_right_button_ok');
+    r=rospy.Rate(10);
+    soundhandle = SoundClient()
+    notDone = 1
+    count = 0
+
+    #for the robot's display
+    pub = rospy.Publisher('/robot/xdisplay', Image, latch=True, queue_size=1)
+    img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_4_happy2.png")
+    happyFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+    img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_3_neutral2.png")
+    neutralFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+    soundhandle.say('hello, would you like some ice cream?')
+    #define right arm poses
+    rightArmNeutralPose = {'right_s0': 1.0369710126105396, 'right_s1': -0.1614514779249398, 'right_w0': 0.25579129637989273, 'right_w1': -0.10891263593986437, 'right_w2': 0.0, 'right_e0': 0.04295146206079158, 'right_e1': 1.749121593386343}
+
+    rightArmSidePose = {'right_s0': 1.0062913968528313, 'right_s1': -0.9326603190343316, 'right_w0': -0.847524385306691, 'right_w1': 1.4001409641424114, 'right_w2': -0.15339807878854136, 'right_e0': -0.6120583343662801, 'right_e1': 1.1669758843838285}
+
+    rightArmFrontOfferingPose = {'right_s0': 1.0162622719740866, 'right_s1': -0.9253739102918759, 'right_w0': 0.25349032519806464, 'right_w1': 1.4254516471425207, 'right_w2': -0.08360195293975504, 'right_e0': -0.06327670750027331, 'right_e1': 0.9012137128826806}
+
+    soundhandle.say('hello, would you like some ice cream?')
+    limb = baxter_interface.Limb('right')
+    angles = limb.joint_angles()
+    print angles
+
+    right_gripper = baxter_interface.Gripper('right', CHECK_VERSION)
+    s = '0'
+
+    #set up robot's initial state just in case
+    pub.publish(neutralFace)
+    sleep(1)
+    baxter_interface.Head().set_pan(0.0)
+    sleep(1)
+   # limb.move_to_joint_positions(rightArmNeutralPose)
+   # sleep(5)
+   # limb.move_to_joint_positions(rightArmSidePose)
+   # sleep(5)
+   # right_gripper.calibrate()
+   # sleep(3)
+
+ 
+    #start main loop
+    while (not rospy.is_shutdown()):
+      #wait until the table has sent us a message
+      #while ((not rospy.is_shutdown()) and (s[0]=='0')):
+      #  print '.'
+      #  r.sleep()
+      #  f=open('/home/turtlebot/messagesFromTable','r')
+      #  s=f.read()
+      #  f.close()
+
+      while ((not rospy.is_shutdown()) and (b.state==0)):
+        print '.'
+        r.sleep()
+
+      if (not rospy.is_shutdown()):
+        print 'person has come in front of the robot'
+        pub.publish(happyFace)
+        #sleep(1)
+
+        soundhandle.say('hello, would you like some ice cream?')
+
+     #   right_gripper.close()
+     #   sleep(2)
+
+      #  limb.move_to_joint_positions(rightArmFrontOfferingPose)
+       # sleep(2)
+        soundhandle.say('please take it')
+        sleep(1)
+       # right_gripper.open()
+        #sleep(2)
+
+        soundhandle.say('bye bye')
+        sleep(1)
+        pub.publish(neutralFace)
+        #limb.move_to_joint_positions(rightArmSidePose)
+        #sleep(3)
+
+        
+
+        #right_gripper.open()
+        #sleep(3)
+        #right_gripper.close()
+        #sleep(3)
+        '''
+        
+        sleep(1)
+        soundhandle.say(s)
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/hello.wav')
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmUpALittlePose)
+        sleep(3)
+
+      if (not rospy.is_shutdown()):
+        print 'get a bag'
+        baxter_interface.Head().set_pan(-0.9)
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmSidePose)
+        #sleep(5)
+        soundhandle.say('May I have a bag, please?')
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav')
+        #sleep(2)
+        #waits until the button on the robot is pressed, just in case
+      while ((not rospy.is_shutdown()) and (b.state==0)):
+        print '.'
+        r.sleep()
+
+      if (not rospy.is_shutdown()):
+        print 'bye'
+        baxter_interface.Head().set_pan(0.0)
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmFrontOfferingPose)
+        #sleep(5)
+        soundhandle.say('There you go, have a good day!')
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/there_you_go.wav')
+        sleep(5)
+        #while (b.state==0):
+        #  print '.'
+        #  r.sleep()
+
+      if (not rospy.is_shutdown()):
+        print 'back to waiting'
+        limb.move_to_joint_positions(rightArmNeutralPose)
+        sleep(5)
+        pub.publish(neutralFace)
+        #write table we have finished
+        f=open('/home/turtlebot/messagesFromTable','w')
+        s=f.write('0')
+        f.close()
+        s = '0'
+        sleep(1)
+    '''
+    if (rospy.is_shutdown()):
+      print 'ros has been shut down. bye!'      
+
+
+if __name__ == '__main__':
+    rospy.init_node('baxter-icecream', anonymous = True)
+
+    print '---------------------'
+    print '-Baxter ice cream    -'
+    print '-  Jan 2017, HH  -'
+    print '---------------------'
+
+    mainLoop()
+    #try:
+    #  mainLoop()
+    #except KeyboardInterrupt:
+    #  sys.exit()
+
+
+

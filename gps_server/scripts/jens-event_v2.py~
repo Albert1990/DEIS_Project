@@ -1,0 +1,208 @@
+#!/usr/bin/env python
+
+import rospy, os, sys
+from sound_play.msg import SoundRequest
+from sound_play.libsoundplay import SoundClient
+
+import baxter_interface.digital_io as DIO
+import baxter_interface
+
+import argparse
+
+import cv2
+import cv_bridge
+
+from sensor_msgs.msg import (
+    Image,
+)
+
+import random
+
+FILE_TO_CHECK = "/home/turtlebot/messagesFromTable.txt"
+
+#"/run/user/1000/gvfs/smb-share:server=192.168.1.4,share=users/adminpelle/Desktop/share_data_reg/messagesFromTable.txt"
+
+# '/home/turtlebot/messagesFromTable'
+
+def sleep(t):
+    try:
+        rospy.sleep(t)
+    except KeyboardInterrupt:
+        sys.exit()
+    except:
+        pass
+
+
+
+def mainLoop():
+
+    #set up our variables
+    b=DIO.DigitalIO('torso_right_button_ok');
+    r=rospy.Rate(10);
+    soundhandle = SoundClient()
+    notDone = 1
+    count = 0
+
+    #for the robot's display
+    pub = rospy.Publisher('/robot/xdisplay', Image, latch=True, queue_size=1)
+    img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_4_happy2.png")
+    happyFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+    img = cv2.imread("/home/turtlebot/ros_ws/src/baxter_examples/share/images/comm_dep_faces/comm_dep_baxter_3_neutral2.png")
+    neutralFace = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+  
+    #define right arm poses
+    rightArmNeutralPose = {'right_s0': 1.0369710126105396, 'right_s1': -0.1614514779249398, 'right_w0': 0.25579129637989273, 'right_w1': -0.10891263593986437, 'right_w2': 0.0, 'right_e0': 0.04295146206079158, 'right_e1': 1.749121593386343}
+
+    WaitingForPuttingBagOnPose = {'right_s0': -0.22702915660704123, 'right_s1': -1.0484758685196802, 'right_w0': 0.22702915660704123, 'right_w1': -1.292378813793461, 'right_w2': 0.0003834951969713534, 'right_e0': -0.19251458887961942, 'right_e1': 2.2208206856611077}
+
+    rightArmUpALittlePose = {'right_s0': 1.0062913968528313, 'right_s1': -1.0342865462317403, 'right_w0': 0.25617479157686407, 'right_w1': 0.045252433242619704, 'right_w2': -0.0003834951969713534, 'right_e0': 0.044485442848677, 'right_e1': 2.4470828518742063}
+
+    rightArmSidePose = {'right_s0': -0.22702915660704123, 'right_s1': -1.0484758685196802, 'right_w0': 0.22702915660704123, 'right_w1': -1.292378813793461, 'right_w2': 0.0003834951969713534, 'right_e0': -0.19251458887961942, 'right_e1': 2.2208206856611077}
+
+    rightArmFrontOfferingPose = {'right_s0': 0.8904758473674826, 'right_s1': -0.26307770512234846, 'right_w0': -0.04180097646987752, 'right_w1': 0.298359263243713, 'right_w2': 0.46057773156259546, 'right_e0': -0.3685388842894706, 'right_e1': -0.051004861197190006}
+
+
+    limb = baxter_interface.Limb('right')
+    angles = limb.joint_angles()
+
+#    print angles{'right_s0': 0.8904758473674826, 'right_s1': -0.26307770512234846, 'right_w0': -0.04180097646987752, 'right_w1': 0.298359263243713, 'right_w2': 0.46057773156259546, 'right_e0': -0.3685388842894706, 'right_e1': -0.051004861197190006}
+
+    s = '0'
+
+    #set up robot's initial state just in case
+    pub.publish(neutralFace)
+    sleep(1)
+    baxter_interface.Head().set_pan(0.0)
+    sleep(1)
+    limb.move_to_joint_positions(WaitingForPuttingBagOnPose)
+    sleep(5)
+ 
+    #start main loop
+    while (not rospy.is_shutdown()):
+      #wait until the table has sent us a message
+      while ((not rospy.is_shutdown()) and (s[0]=='0')):
+        print '.'
+        r.sleep()
+        f=open(FILE_TO_CHECK,'r')
+        s=f.read()
+        f.close()
+
+      if (not rospy.is_shutdown()):
+        print 'person has come in front of the robot'
+        pub.publish(happyFace)
+	baxter_interface.Head().set_pan(0.0)
+        #sleep(1)
+	rx = random.randint(1,4)
+	if rx == 1:
+		soundhandle.say('Good morning')
+		sleep(1)
+		soundhandle.say(s)
+		sleep(1)
+		soundhandle.say("Please take your bag")
+	elif rx == 2:
+		soundhandle.say('Hello hi')
+		sleep(1)
+		soundhandle.say(s)
+		sleep(1)
+		soundhandle.say("Please take your bag")
+	elif rx == 3:
+		soundhandle.say('Howdy!')
+		sleep(1)
+		soundhandle.say(s)
+		sleep(1)
+		soundhandle.say("Please take your bag")
+	else:
+		soundhandle.say('Hi!')
+		sleep(1)
+		soundhandle.say(s)
+		sleep(1)
+		soundhandle.say("Please take your bag")
+
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/hello.wav')
+        #sleep(2)
+        #limb.move_to_joint_positions(rightArmUpALittlePose)
+        #sleep(1)
+
+      #if (not rospy.is_shutdown()):
+      #  print 'get a bag'
+      #  baxter_interface.Head().set_pan(-0.9)
+      #  #sleep(2)
+      #  limb.move_to_joint_positions(rightArmSidePose)
+        #sleep(5)
+      #  soundhandle.say('Richard, may I have a bag, please?')
+        #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav')
+        #sleep(2)
+        #waits until the button on the robot is pressed, just in case
+#      while ((not rospy.is_shutdown()) and (b.state==0)):
+ #       print '.'
+  #      r.sleep()
+
+      if (not rospy.is_shutdown()):
+	f=open(FILE_TO_CHECK,'w')
+        f.write('0')
+        f.close()
+        print 'bye'
+        baxter_interface.Head().set_pan(0.0)
+        #sleep(2)
+        limb.move_to_joint_positions(rightArmFrontOfferingPose)
+        #sleep(5)
+	rx = random.randint(1,4)
+	if rx == 1:
+        	soundhandle.say('Have a good health innovation day! See you '+s)
+	elif rx == 2:
+        	soundhandle.say('Have fun today! See you '+s)
+	elif rx == 3:
+        	soundhandle.say('Nice to meet you '+s+'. See you around')
+	else:
+        	soundhandle.say('There seems to be a lot of people here today, have fun '+s+'!')
+        
+	s = '0'
+#soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/there_you_go.wav')
+        sleep(3)
+        #while (b.state==0):
+        #  print '.'
+        #  r.sleep()
+
+      if (not rospy.is_shutdown()):
+        print 'back to waiting'
+        limb.move_to_joint_positions(WaitingForPuttingBagOnPose)
+ 	sleep(1)
+        #limb.move_to_joint_positions(rightArmSidePose)
+        #sleep(5)
+	rx = random.randint(1,4)
+	if rx == 1:
+        	soundhandle.say('Richard, may I have a bag, please?')
+	elif rx == 2:
+        	soundhandle.say('Yo! May I have a bag, please?')
+	elif rx == 3:
+        	soundhandle.say('Richard, stop sleeping and give me a bag')
+	else:
+        	soundhandle.say('Bag please, and keep smiling Richard.')
+        
+	sleep(1)
+	baxter_interface.Head().set_pan(-0.9)
+        pub.publish(neutralFace)
+        #write table we have finished
+        s = '0'
+        sleep(1)
+
+    if (rospy.is_shutdown()):
+      print 'ros has been shut down. bye!'      
+
+
+if __name__ == '__main__':
+    rospy.init_node('baxter-receptionist', anonymous = True)
+
+    print '---------------------'
+    print '-Baxter receptionist-'
+    print '-  August 2016, HH  -'
+    print '---------------------'
+
+    mainLoop()
+    #try:
+    #  mainLoop()
+    #except KeyboardInterrupt:
+    #  sys.exit()
+
+
+

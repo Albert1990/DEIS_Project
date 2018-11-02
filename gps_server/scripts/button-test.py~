@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+import rospy, os, sys
+from sound_play.msg import SoundRequest
+
+from sound_play.libsoundplay import SoundClient
+
+#from control_msgs.msg import DigitalIOState
+
+#import control_msgs
+import baxter_interface.digital_io as DIO
+
+def sleep(t):
+    try:
+        rospy.sleep(t)
+    except:
+        pass
+
+
+def CallBack(msg):
+  print '----------------'
+  print msg
+  if msg.state==1:
+    print 'GOTCHA'
+
+
+if __name__ == '__main__':
+    rospy.init_node('soundplay_test', anonymous = True)
+    print '----------------'
+    b=DIO.DigitalIO('right_button_ok');
+    if b.state==1:
+      print 'GOTCHA'
+    else:
+      print 'NOPE'
+    print '----------------'
+    #sub_msg= rospy.Subscriber('/robot/digital_io/right_button_ok/state', baxter_core_msgs.msg.DigitalIOState, CallBack)
+    #rospy.spin()
+
+    #soundhandle = SoundClient()
+
+    #rospy.sleep(1)
+    
+    #soundhandle.stopAll()
+
+    #print "This script will run continuously until you hit CTRL+C, testing various sound_node sound types."
+
+    #print
+   
+    #print 'hello'
+    #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/hello.wav')
+    #sleep(5)
+
+    #print 'bag'
+    #s2 = soundhandle.waveSound("/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav")
+    #s2.play()       
+    #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/can_I_have_a_bag_please.wav')
+    #sleep(5)
+    #s2.stop()
+
+    #print 'bye'
+    #soundhandle.playWave('/home/turtlebot/Desktop/baxter_aug_event/there_you_go_have_a_good_day.wav')
+    #sleep(5)
+
