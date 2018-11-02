@@ -27,7 +27,9 @@ class RedBoard:
     def readSensors(self):
         packet = bytearray([0x01, 0x04])
         self.sendData(packet)
+        # print('s1')
         sensorsData = self.ser.read(self.commandSize)
+        # print(sensorsData)
 
         leftEncoderValue = self.bytesToLong(sensorsData[2:6])
         rightEncoderValue = self.bytesToLong(sensorsData[6:10])
