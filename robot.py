@@ -31,7 +31,9 @@ class Robot:
     def _readSensors(self):
         (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor,leftColliderSensor, rightColliderSensor) =  self.board.readSensors()
         encoderPulses = EncoderPulses(leftEncoderValue, rightEncoderValue)
-        self.robotPos = odometry.calculate_position(encoderPulses)
+        robotPos = odometry.calculatePosition(encoderPulses, self.getRobotPos())
+        if(robotPos):
+            self.robotPos = robotPos
         self.irSensors = IrSensors(leftIRSensor, centerIRSensor, rightIRSensor)
         self.collisionSensors = CollisionSensors(leftColliderSensor, rightColliderSensor)
 
