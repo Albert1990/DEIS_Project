@@ -4,7 +4,7 @@ import time
 class RedBoard:
     port = ''
     ser = ''
-    commandSize = 15
+    commandSize = 20
 
     def __init__(self, port):
         self.port = port
@@ -33,11 +33,11 @@ class RedBoard:
 
         leftEncoderValue = self.bytesToLong(sensorsData[2:6])
         rightEncoderValue = self.bytesToLong(sensorsData[6:10])
-        leftIRSensor = sensorsData[10]
-        centerIRSensor = sensorsData[11]
-        rightIRSensor = sensorsData[12]
-        leftColliderSensor = sensorsData[13]
-        rightColliderSensor = sensorsData[14]
+        leftIRSensor = self.bytesToLong(sensorsData[10:12])
+        centerIRSensor = self.bytesToLong(sensorsData[12:14])
+        rightIRSensor = self.bytesToLong(sensorsData[14:16])
+        leftColliderSensor = sensorsData[16]
+        rightColliderSensor = sensorsData[17]
         return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor,leftColliderSensor, rightColliderSensor)
         # print(leftEncoderValue)
         # print(rightEncoderValue)
