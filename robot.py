@@ -1,17 +1,22 @@
 from utils import RobotPos, EncoderPulses, IrSensors, CollisionSensors
 import red_board
 import odometry
+import math
+import threading
 
 class Robot:
-    def __init__(self):
+    def __init__(self, serialPort):
         self.robotPos = RobotPos()
-        self.board = red_board.RedBoard('/dev/tty.usbserial-AH05K013')
+        self.board = red_board.RedBoard(serialPort)
         self.leftMotorSpeed = 0
         self.rightMotorSpeed = 0
         self.irSensors = IrSensors()
         self.collisionSensors = CollisionSensors()
 
         # create a thread that read sensor data always
+        t = threading.Thread(target=self._readSensors)
+        t.start()
+
         # create a thread that write motors data always (think about it more)
 
     def setRobotPos(self, robotPos):
@@ -21,21 +26,22 @@ class Robot:
         return self.robotPos
 
     def setLeftMotorSpeed(self, speed):
-        self.leftMotorSpeed = speed
-        self.board.setLeftMotorSpeed(speed, 1 if speed >= 0 else 0)
+        self.leftMotorSpeed = abs(speed)
+        self.board.setLeftMotorSpeed(self.leftMotorSpeed, 1 if speed >= 0 else 0)
 
     def setRightMotorSpeed(self, speed):
-        self.rightMotorSpeed = speed
-        self.board.setRightMotorSpeed(speed, 1 if speed >= 0 else 0)
+        self.rightMotorSpeed = abs(speed)
+        self.board.setRightMotorSpeed(self.rightMotorSpeed, 1 if speed >= 0 else 0)
 
     def _readSensors(self):
-        (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor,leftColliderSensor, rightColliderSensor) =  self.board.readSensors()
-        encoderPulses = EncoderPulses(leftEncoderValue, rightEncoderValue)
-        robotPos = odometry.calculatePosition(encoderPulses, self.getRobotPos())
-        if(robotPos):
-            self.robotPos = robotPos
-        self.irSensors = IrSensors(leftIRSensor, centerIRSensor, rightIRSensor)
-        self.collisionSensors = CollisionSensors(leftColliderSensor, rightColliderSensor)
+        while True:
+            (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor,leftColliderSensor, rightColliderSensor) =  self.board.readSensors()
+            encoderPulses = EncoderPulses(leftEncoderValue, rightEncoderValue)
+            robotPos = odometry.calculatePosition(encoderPulses, self.getRobotPos())
+            if(robotPos):
+                self.robotPos = robotPos
+            self.irSensors = IrSensors(leftIRSensor, centerIRSensor, rightIRSensor)
+            self.collisionSensors = CollisionSensors(leftColliderSensor, rightColliderSensor)
 
     def getIrSensors(self):
         return self.irSensors
