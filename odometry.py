@@ -9,7 +9,7 @@ lastEncoderPulses = EncoderPulses()
 def calculatePosition(currentEncoderPulses, currentRobotPos):
     global firstRun
     global lastEncoderPulses
-    print(currentEncoderPulses.left, currentEncoderPulses.right)
+    print('leftEncoder: %d, rightEncoder: %d' % (currentEncoderPulses.left, currentEncoderPulses.right))
     if firstRun:
         lastEncoderPulses = currentEncoderPulses
         firstRun = False
@@ -17,7 +17,7 @@ def calculatePosition(currentEncoderPulses, currentRobotPos):
     else:
         ddr = pulsesToMillimeter(currentEncoderPulses.right - lastEncoderPulses.right)
         ddl = pulsesToMillimeter(currentEncoderPulses.left - lastEncoderPulses.left)
-        print('ddl: %d, ddr: %d' % (ddl, ddr))
+        # print('ddl: %d, ddr: %d' % (ddl, ddr))
         C = currentRobotPos.C
         newP = updatePosition(currentRobotPos, ddr, ddl, C)
         # newP.C = C

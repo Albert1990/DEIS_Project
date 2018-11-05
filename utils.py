@@ -2,8 +2,9 @@ import numpy as np
 
 class EncoderPulses:
     def __init__(self, left= 0, right= 0):
-        self.left = 4294967295 - left
-        self.right = 4294967295 - right
+        # 4294967295
+        self.left = left
+        self.right = right
 
 class RobotPos:
     def __init__(self):
