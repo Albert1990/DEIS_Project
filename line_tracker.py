@@ -23,13 +23,15 @@ class LineTracker:
         self.lastSensorValue = 0
         
         self.start()
+        
+        
 
         """ The control loop.
             Maybe this called from a timer. """
         while True:
             self.compute()
-
-            time.sleep(1)
+            #print("haha")   
+            time.sleep(0.2)
 
 
     # the controller logic. computes the new controller output
@@ -37,17 +39,18 @@ class LineTracker:
 	
         if( self.running ):
         
+            #print("hoho")
             # get the sensor values from the robot
             #sensorValue = robot.getSensorValues()
             # sensorValue = random.randint(-1, 1)
             
-            self.robot._readSensors()
+            #self.robot._readSensors()
             
             leftIRSensor = self.robot.irSensors.left
             centerIRSensor = self.robot.irSensors.center
             rightIRSensor = self.robot.irSensors.right
             
-            
+            #print(leftIRSensor, centerIRSensor, rightIRSensor)
             
             sensorValue = self.calculateAvrSensorValue(leftIRSensor, centerIRSensor, rightIRSensor)
             
@@ -59,14 +62,14 @@ class LineTracker:
             """
                 
             error = self.setPointSensor*1.0 - sensorValue
-            print(error, "error")
+            #print(error, "error")
 
-            leftSpeed = int(-(self.normalSpeed - self.kp*error))
+            leftSpeed = int((self.normalSpeed - self.kp*error))
             rightSpeed = int(self.normalSpeed + self.kp*error)
             
             #leftSpeed = abs(leftSpeed)
             #rightSpeed = abs(rightSpeed)
-            print(leftSpeed, rightSpeed)
+            print("leftspeed:",leftSpeed, "rightspeed:", rightSpeed)
 
             # set the speed of the motors
             self.robot.setLeftMotorSpeed(leftSpeed)

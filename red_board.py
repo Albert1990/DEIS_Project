@@ -13,8 +13,11 @@ class RedBoard:
         time.sleep(2)
 
     def setLeftMotorSpeed(self, speed, isPositive):
+        print(speed, isPositive)
         packet = bytearray([0x01, 0x01, speed, isPositive])
+        
         return self.sendData(packet)
+         
     
     def setRightMotorSpeed(self, speed, isPositive):
         packet = bytearray([0x01, 0x02, speed, isPositive])
@@ -59,6 +62,7 @@ class RedBoard:
         # print('------------')
 
         self.ser.write(data)
+        #print("send success:", data)
         return True
 
     def bytesToLong(self, bytesArr):

@@ -7,10 +7,10 @@ RedBotSensor rightSensor = RedBotSensor(A7);
 RedBotEncoder encoder = RedBotEncoder(A2, 10);
 const int commandSize = 20;
 
-char rxBuffer[commandSize], txBuffer[commandSize];
+byte rxBuffer[commandSize], txBuffer[commandSize];
 int i = 0;
-int leftMotorSpeed = 0;
-int rightMotorSpeed = 0;
+unsigned int leftMotorSpeed = 0;
+unsigned int rightMotorSpeed = 0;
 int mode = 1;
 int available = 0;
 long leftEncoderCounter, rightEncoderCounter;
@@ -37,12 +37,16 @@ void processCommand() {
     switch(rxBuffer[1]) {
       case 0x01: // setLeftMotorSpeed
         leftMotorSpeed = rxBuffer[2];
-        if(rxBuffer[3] == 0) leftMotorSpeed = -leftMotorSpeed;
+        if(rxBuffer[3] == 1) leftMotorSpeed = -leftMotorSpeed;
+        //leftMotorSpeed = -127;
+        // negative value for left speed will make the robot go forward, positive backward
+        //leftMotorSpeed = 0x80;
         motors.leftMotor(leftMotorSpeed);
       break;
       case 0x02: // setRightMotorSpeed
         rightMotorSpeed = rxBuffer[2];
         if(rxBuffer[3] == 0) rightMotorSpeed = -rightMotorSpeed;
+        // negative value for right speed will make the robot go backward, positive forward. So the other way around compared to for left motor. 
         motors.rightMotor(rightMotorSpeed);
       break;
       case 0x03: // setMode
