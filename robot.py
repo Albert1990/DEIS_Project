@@ -3,6 +3,7 @@ import red_board
 import odometry
 import math
 import threading
+import time
 
 class Robot:
     def __init__(self, serialPort):
@@ -44,6 +45,7 @@ class Robot:
             #    self.robotPos = robotPos
             self.irSensors = IrSensors(leftIRSensor, centerIRSensor, rightIRSensor)
             self.collisionSensors = CollisionSensors(leftColliderSensor, rightColliderSensor)
+            time.sleep(0.001)
 
     def getIrSensors(self):
         return self.irSensors

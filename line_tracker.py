@@ -11,7 +11,7 @@ class LineTracker:
     def __init__(self, robot):
 		
         # P controller
-        self.kp = 80
+        self.kp = 20
         self.normalSpeed = 80
         self.setPointSensor = 0
         self.LINETRESHOLD = 900
@@ -31,7 +31,7 @@ class LineTracker:
         while True:
             self.compute()
             #print("haha")   
-            time.sleep(0.2)
+            time.sleep(0.0001)
 
 
     # the controller logic. computes the new controller output
@@ -74,7 +74,7 @@ class LineTracker:
             # set the speed of the motors
             self.robot.setLeftMotorSpeed(leftSpeed)
             self.robot.setRightMotorSpeed(rightSpeed)
-            #robot.setMotorSpeed(leftSpeed, rightSpeed)
+          
             
             #print(leftSpeed)
             #print(rightSpeed)
