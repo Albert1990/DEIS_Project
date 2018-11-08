@@ -66,42 +66,30 @@ class LineTracker:
         
         
     def calculateAvrSensorValue(self, leftIRSensor, centerIRSensor, rightIRSensor):
-    
-        #print(leftIRSensor, centerIRSensor, rightIRSensor)
-    
         steeringValue = 0
         nrOfSensorsActive = 0
         
         if(self.sensorIsActive(leftIRSensor)):
-        
             steeringValue -= 1
             nrOfSensorsActive += 1
             
         if(self.sensorIsActive(centerIRSensor)):
-       
             steeringValue += 0
             nrOfSensorsActive += 1
         
         
         if(self.sensorIsActive(rightIRSensor)):
-       
             steeringValue += 1
             nrOfSensorsActive += 1
             
-        
-       
         if( self.isOutSideOfTrack(leftIRSensor, centerIRSensor, rightIRSensor) ):
             steeringValue = self.lastSensorValue
-                 
-            
+                         
         else:
-      
             steeringValue = steeringValue*1.0 / nrOfSensorsActive*1.0
-            
-        #print(steeringValue)
+
         self.lastSensorValue = steeringValue
-        
-        
+ 
         return steeringValue
         
         
