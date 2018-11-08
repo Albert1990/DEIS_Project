@@ -4,29 +4,23 @@ import threading
 
 class LineTracker:
 
-    
-
-    
-
     def __init__(self, robot):
 		
         # P controller
         self.kp = 40
         self.normalSpeed = 80
         self.setPointSensor = 0
-        self.LINETRESHOLD = 900
-        
-        
+        self.LINETRESHOLD = 900    
         self.robot = robot
         self.lastSensorValue = 0 
-        self.start()
+        self.running = False
 
         """ The control loop.
             Maybe this called from a timer. """
         
-        t = threading.Thread(target=self.compute)
-        t.start()
-        i = 0
+        worker = threading.Thread(target=self.compute)
+        worker.start()
+        # i = 0
         # while True:
             # #self.compute()
             # #print("haha")  
@@ -77,11 +71,11 @@ class LineTracker:
 
         
 
-    def start(self):
+    def startLineTracker(self):
         self.running = True
         # start linetracking
 
-    def stop(self):
+    def stopLineTracker(self):
         print("line tracking stopped")
         self.running = False
 		
@@ -145,7 +139,7 @@ class LineTracker:
         
     def changeLane(self, direction):
         print("changing line to", direction)
-        self.stop()
+        self.stopLineTracker()
         
         if(direction == "left"):
             self.robot.setLeftMotorSpeed(self.normalSpeed - (40))
@@ -178,7 +172,7 @@ class LineTracker:
         while( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) ):
             print("outside of line")
            
-        self.start()
+        self.startLineTracker()
         
         
             
