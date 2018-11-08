@@ -1,6 +1,6 @@
 import random
 import time
-
+import threading
 
 class LineTracker:
 
@@ -23,50 +23,57 @@ class LineTracker:
 
         """ The control loop.
             Maybe this called from a timer. """
+        
+        t = threading.Thread(target=self.compute)
+        t.start()
         i = 0
-        while True:
-            self.compute()
-            #print("haha")  
-            #print( "position:", self.robot.robotPos.X, self.robot.robotPos.Y, self.robot.robotPos.Theta)
-            if( i == 30):
-                self.changeLane("left")
+        # while True:
+            # #self.compute()
+            # #print("haha")  
+            # #print( "position:", self.robot.robotPos.X, self.robot.robotPos.Y, self.robot.robotPos.Theta)
+            # if( i == 3000):
+                # self.changeLane("left")
             
             
-            if(i == 90):
-                self.changeLane("right")
+            # if(i == 9000):
+                # self.changeLane("right")
                 
-            if(i == 140):
-                self.changeLane("left")
+            # if(i == 14000):
+                # self.changeLane("left")
             
-            i +=1
-            print(i, "i")
-            time.sleep(0.0001)
+            # i +=1
+            # print(i, "i")
+            # time.sleep(0.0001)
 
 
     # the controller logic. computes the new controller output
     def compute(self):
         
-        # get the sensor values from the robot
-        
-        leftIRSensor = self.robot.irSensors.left
-        centerIRSensor = self.robot.irSensors.center
-        rightIRSensor = self.robot.irSensors.right
-        
-        sensorValue = self.calculateAvrSensorValue(leftIRSensor, centerIRSensor, rightIRSensor)
+        while True:
+            # get the sensor values from the robot
+            print("COMPUTE COMPUTE COMPUTE COMPUTE COMPUTE")
+            leftIRSensor = self.robot.irSensors.left
+            centerIRSensor = self.robot.irSensors.center
+            rightIRSensor = self.robot.irSensors.right
+            
+            sensorValue = self.calculateAvrSensorValue(leftIRSensor, centerIRSensor, rightIRSensor)
 
-        """"
-        Maybe we need to calculate a sensor average value with
-        the sensor values as input.
-        """ 
-        error = self.setPointSensor*1.0 - sensorValue
+            """"
+            Maybe we need to calculate a sensor average value with
+            the sensor values as input.
+            """ 
+            error = self.setPointSensor*1.0 - sensorValue
 
-        leftSpeed = int((self.normalSpeed - self.kp*error))
-        rightSpeed = int(self.normalSpeed + self.kp*error)
-       
-        # set the speed of the motors
-        if( self.running == True ):
-            self.robot.setLeftMotorSpeed(leftSpeed)
-            self.robot.setRightMotorSpeed(rightSpeed)
+            leftSpeed = int((self.normalSpeed - self.kp*error))
+            rightSpeed = int(self.normalSpeed + self.kp*error)
+           
+            # set the speed of the motors
+            if( self.running == True ):
+                self.robot.setLeftMotorSpeed(leftSpeed)
+                self.robot.setRightMotorSpeed(rightSpeed)
+                
+            
+            time.sleep(0.0001)
 
         
 
@@ -93,28 +100,33 @@ class LineTracker:
         nrOfSensorsActive = 0
         
         if(self.sensorIsActive(leftIRSensor)):
+            print("1")
             steeringValue -= 1
             nrOfSensorsActive += 1
             
         if(self.sensorIsActive(centerIRSensor)):
+            print("2")
             steeringValue += 0
             nrOfSensorsActive += 1
         
         
         if(self.sensorIsActive(rightIRSensor)):
+            print("3")
             steeringValue += 1
             nrOfSensorsActive += 1
             
         
        
         if( self.isOutSideOfTrack(leftIRSensor, centerIRSensor, rightIRSensor) ):
+            print("4")
             steeringValue = self.lastSensorValue
                  
             
         else:
+            print("5")
             steeringValue = steeringValue*1.0 / nrOfSensorsActive*1.0
             
-        
+        print(steeringValue)
         self.lastSensorValue = steeringValue
         
         
@@ -143,9 +155,24 @@ class LineTracker:
             self.robot.setRightMotorSpeed(self.normalSpeed - (40))
 
         
-        # Wait until we are out of the line 
-        while( not self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) && ):
-            pass
+        # Wait until we are out of the line
+        if( direction == "left"): 
+            while( not ( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) and self.lastSensorValue > 0)):
+                print( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) )
+                print( self.lastSensorValue )
+                print("wait until we are out of the line")
+                pass
+              
+            # while True:
+                # if( self.isOutSideOfTrack and self.lastSensorValue > 0):
+                    # continue
+                    
+                # not ( self.isOutSideOfTrack and self.lastSensorValue > 0):
+                
+        elif( direction == "right"):
+            while( not self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) and self.lastSensorValue < 0):
+                print("wait until we are out of the line")
+                pass
       
         # Wait until the other line is catched
         while( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) ):
