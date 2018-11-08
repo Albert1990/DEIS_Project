@@ -9,7 +9,8 @@ lastEncoderPulses = EncoderPulses()
 def calculatePosition(currentEncoderPulses, currentRobotPos):
     global firstRun
     global lastEncoderPulses
-    print('leftEncoder: %d, rightEncoder: %d' % (currentEncoderPulses.left, currentEncoderPulses.right))
+    #print('leftEncoder: %d, rightEncoder: %d' % (currentEncoderPulses.left, currentEncoderPulses.right))
+    
     if firstRun:
         lastEncoderPulses = currentEncoderPulses
         firstRun = False
