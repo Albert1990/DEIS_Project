@@ -1,5 +1,6 @@
 import serial
 import time
+import struct
 
 class RedBoard:
     port = ''
@@ -30,7 +31,7 @@ class RedBoard:
         packet = bytearray([0x01, 0x04])
         self.sendData(packet)
         # print('s1')
-        sensorsData = self.ser.read(self.commandSize)
+        sensorsData = list(self.ser.read(self.commandSize))
         # print(sensorsData)
 
         leftEncoderValue = self.bytesToLong(sensorsData[2:6])
@@ -65,9 +66,11 @@ class RedBoard:
         return True
 
     def bytesToLong(self, bytesArr):
+        # print('soso')
         result = 0
         for b in bytesArr:
-            result = result * 256 + int(b)
+            # print(struct.unpack("B", b))
+            result = result * 256 + (struct.unpack("B", b)[0])
         return result
 
     def intToBytes(self, value, length):

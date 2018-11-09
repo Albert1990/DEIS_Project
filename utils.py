@@ -7,7 +7,7 @@ class EncoderPulses:
         self.right = right
 
 class RobotPos:
-    def __init__(self):
+    def __init__(self, X= 0, Y = 0):
         self.X = 0
         self.Y = 0
         self.Theta = 0

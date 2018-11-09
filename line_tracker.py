@@ -1,6 +1,7 @@
 import random
 import time
-import threading
+# import threading
+import thread
 
 class LineTracker:
 
@@ -18,8 +19,9 @@ class LineTracker:
         """ The control loop.
             Maybe this called from a timer. """
         print("thread started")
-        worker = threading.Thread(target=self.compute)
-        worker.start()
+        # worker = threading.Thread(target=self.compute)
+        # worker.start()
+        thread.start_new_thread(self.compute, ())
         
 
 
