@@ -47,7 +47,7 @@ class LineTracker:
                 self.robot.setRightMotorSpeed(rightSpeed)
                 
             
-            time.sleep(0.0001)
+            #time.sleep(0.0001)
 
         
 
@@ -92,6 +92,7 @@ class LineTracker:
 
         self.lastSensorValue = steeringValue
  
+        #print(steeringValue)
         return steeringValue
         
         

@@ -9,7 +9,7 @@ class RedBoard:
 
     def __init__(self, port):
         self.port = port
-        self.ser = serial.Serial(port = self.port, baudrate = 9600)
+        self.ser = serial.Serial(port = self.port, baudrate = 250000)
         # here the arduino is going to restart so we have to give it a time
         time.sleep(2)
 

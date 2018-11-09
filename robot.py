@@ -49,7 +49,7 @@ class Robot:
                 self.robotPos = robotPos
             self.irSensors = IrSensors(leftIRSensor, centerIRSensor, rightIRSensor)
             self.collisionSensors = CollisionSensors(leftColliderSensor, rightColliderSensor)
-            time.sleep(0.001)
+            #time.sleep(0.001)
 
     def getIrSensors(self):
         return self.irSensors
