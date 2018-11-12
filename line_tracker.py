@@ -9,7 +9,7 @@ class LineTracker:
 		
         # P controller
         self.kp = 40
-        self.normalSpeed = 80
+        self.normalSpeed = 100
         self.setPointSensor = 0
         self.LINETRESHOLD = 900    
         self.robot = robot
@@ -29,6 +29,7 @@ class LineTracker:
     def compute(self):
         
         while True:
+            print('LineTracker')
             # get the sensor values from the robot
             leftIRSensor = self.robot.irSensors.left
             centerIRSensor = self.robot.irSensors.center
@@ -45,9 +46,12 @@ class LineTracker:
             if( self.running == True ):
                 self.robot.setLeftMotorSpeed(leftSpeed)
                 self.robot.setRightMotorSpeed(rightSpeed)
+            else:
+                self.robot.setLeftMotorSpeed(0)
+                self.robot.setRightMotorSpeed(0)
                 
             
-            #time.sleep(0.0001)
+            time.sleep(0.01)
 
         
 

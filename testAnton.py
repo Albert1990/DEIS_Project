@@ -3,13 +3,17 @@ import robot
 
 import time
 
-robot = robot.Robot('COM3')
+robot = robot.Robot('/dev/ttyUSB0')
 
 
 
 lineTracker = line_tracker.LineTracker(robot)
-
+print('start line tracking')
 lineTracker.startLineTracker()
+time.sleep(12)
+lineTracker.stopLineTracker()
+print('stop line tracker')
+
 
 #i = 0
 # while True:

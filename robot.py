@@ -13,7 +13,7 @@ class Robot:
         self.leftMotorSpeed = 0
         self.rightMotorSpeed = 0
         self.irSensors = IrSensors()
-        self.collisionSensors = CollisionSensors()
+        self.ultrasonicDistance = 0
         
         
 
@@ -31,31 +31,35 @@ class Robot:
         return self.robotPos
 
     def setLeftMotorSpeed(self, speed):
-        self.leftMotorSpeed = abs(speed)
-        self.board.setLeftMotorSpeed(self.leftMotorSpeed, 1 if speed >= 0 else 0)
+        if self.leftMotorSpeed != speed:
+            self.leftMotorSpeed = speed
+            self.board.setLeftMotorSpeed(abs(self.leftMotorSpeed), 1 if self.leftMotorSpeed >= 0 else 0)
 
     def setRightMotorSpeed(self, speed):
-        self.rightMotorSpeed = abs(speed)
-        self.board.setRightMotorSpeed(self.rightMotorSpeed, 1 if speed >= 0 else 0)
+        if self.rightMotorSpeed != speed:
+            self.rightMotorSpeed = speed
+            self.board.setRightMotorSpeed(abs(self.rightMotorSpeed), 1 if self.rightMotorSpeed >= 0 else 0)
 
     def _readSensors(self):
         while True:
-            (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor,leftColliderSensor, rightColliderSensor) =  self.board.readSensors()
+            print('_readSensors !')
+            (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor, distance) =  self.board.readSensors()
             encoderPulses = EncoderPulses(leftEncoderValue, rightEncoderValue)
             
             robotPos = odometry.calculatePosition(encoderPulses, self.getRobotPos())
-           
+            
             if(robotPos):
                 self.robotPos = robotPos
             self.irSensors = IrSensors(leftIRSensor, centerIRSensor, rightIRSensor)
-            self.collisionSensors = CollisionSensors(leftColliderSensor, rightColliderSensor)
-            #time.sleep(0.001)
+            self.ultrasonicDistance = distance
+            print('distance: %d' % self.ultrasonicDistance)
+            time.sleep(0.005)
 
     def getIrSensors(self):
         return self.irSensors
 
-    def getCollisionSensors(self):
-        return self.collisionSensors
+    def getUltrasonicDistance(self):
+        return self.ultrasonicDistance
         
         
     

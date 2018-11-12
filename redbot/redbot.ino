@@ -5,7 +5,11 @@ RedBotSensor leftSensor = RedBotSensor(A3);
 RedBotSensor centerSensor = RedBotSensor(A6);
 RedBotSensor rightSensor = RedBotSensor(A7);
 RedBotEncoder encoder = RedBotEncoder(A2, 10);
+//const int trigPin = 3;
+//const int echoPin = 11;
 const int commandSize = 20;
+//long duration;
+//int distance;
 
 byte rxBuffer[commandSize], txBuffer[commandSize];
 int i = 0;
@@ -20,6 +24,8 @@ int leftIRSensor, centerIRSensor, rightIRSensor;
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
+//  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+//  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
   Serial.begin(9600);     // opens serial port, sets data rate to 9600 bps
 }
 
@@ -27,8 +33,25 @@ void loop() {
   if(Serial.available() >= commandSize) {
     Serial.readBytes(rxBuffer, commandSize);
     processCommand();
+    //ultrasonic();
   }
 }
+
+//void ultrasonic(){
+//  digitalWrite(trigPin, LOW);
+//  delayMicroseconds(2);
+//  
+//  // Sets the trigPin on HIGH state for 10 micro seconds
+//  digitalWrite(trigPin, HIGH);
+//  delayMicroseconds(10);
+//  digitalWrite(trigPin, LOW);
+//  
+//  // Reads the echoPin, returns the sound wave travel time in microseconds
+//  duration = pulseIn(echoPin, HIGH);
+//  
+//  // Calculating the distance
+//  distance= duration*0.034/2; 
+//}
 
 void processCommand() {
   // now we should parse the recieved command
@@ -92,8 +115,8 @@ void processCommand() {
        
 
         // set collider data
-        txBuffer[16] = 0x00;
-        txBuffer[17] = 0x00;
+        txBuffer[16] = 0x00; //( distance >> 8 ) & 0xFF;
+        txBuffer[17] = 0x00; //( distance ) & 0xFF;
         txBuffer[18] = 0x00;
         txBuffer[19] = 0x00;
 //        
@@ -118,4 +141,3 @@ void togglLed(int time) {
     delay(time);  
   }
 }
-

@@ -8,8 +8,8 @@ class EncoderPulses:
 
 class RobotPos:
     def __init__(self, X= 0, Y = 0):
-        self.X = 0
-        self.Y = 0
+        self.X = int(X)
+        self.Y = int(Y)
         self.Theta = 0
         self.C = np.zeros((3,3))
 

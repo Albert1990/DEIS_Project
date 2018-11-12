@@ -30,18 +30,21 @@ class RedBoard:
     def readSensors(self):
         packet = bytearray([0x01, 0x04])
         self.sendData(packet)
-        # print('s1')
+        print('s1')
         sensorsData = list(self.ser.read(self.commandSize))
-        # print(sensorsData)
+        print('tt')
+        print(sensorsData)
 
         leftEncoderValue = self.bytesToLong(sensorsData[2:6])
         rightEncoderValue = self.bytesToLong(sensorsData[6:10])
         leftIRSensor = self.bytesToLong(sensorsData[10:12])
         centerIRSensor = self.bytesToLong(sensorsData[12:14])
         rightIRSensor = self.bytesToLong(sensorsData[14:16])
-        leftColliderSensor = sensorsData[16]
-        rightColliderSensor = sensorsData[17]
-        return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor,leftColliderSensor, rightColliderSensor)
+        # distance = self.bytesToLong(sensorsData[16:18])
+        
+        # leftColliderSensor = sensorsData[16]
+        # rightColliderSensor = sensorsData[17]
+        return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor, distance)
         # print(leftEncoderValue)
         # print(rightEncoderValue)
         # print(sensorsData)
