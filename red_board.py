@@ -44,7 +44,8 @@ class RedBoard:
         
         # leftColliderSensor = sensorsData[16]
         # rightColliderSensor = sensorsData[17]
-        return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor, distance)
+        #return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor, distance)
+        return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor)
         # print(leftEncoderValue)
         # print(rightEncoderValue)
         # print(sensorsData)

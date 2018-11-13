@@ -9,11 +9,13 @@ class LineTracker:
 		
         # P controller
         self.kp = 40
+        self.kd = 0
         self.normalSpeed = 100
         self.setPointSensor = 0
         self.LINETRESHOLD = 900    
         self.robot = robot
         self.lastSensorValue = 0 
+        self.lastError = 0
         self.running = False
 
         """ The control loop.
@@ -34,13 +36,18 @@ class LineTracker:
             leftIRSensor = self.robot.irSensors.left
             centerIRSensor = self.robot.irSensors.center
             rightIRSensor = self.robot.irSensors.right
+            print(leftIRSensor, centerIRSensor, rightIRSensor)
             
             sensorValue = self.calculateAvrSensorValue(leftIRSensor, centerIRSensor, rightIRSensor)
+            #print(sensorValue)
 
             error = self.setPointSensor*1.0 - sensorValue
+            dError = error - self.lastError
+            
+            self.lastError = error
 
-            leftSpeed = int((self.normalSpeed - self.kp*error))
-            rightSpeed = int(self.normalSpeed + self.kp*error)
+            leftSpeed = int(self.normalSpeed - (self.kp*error + self.kd*dError))
+            rightSpeed = int(self.normalSpeed + (self.kp*error + self.kd*dError))
            
             # set the speed of the motors
             if( self.running == True ):

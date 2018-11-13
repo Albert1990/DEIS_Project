@@ -26,7 +26,7 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
 //  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
 //  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
-  Serial.begin(9600);     // opens serial port, sets data rate to 9600 bps
+  Serial.begin(250000);     // opens serial port, sets data rate to 9600 bps
 }
 
 void loop() {
