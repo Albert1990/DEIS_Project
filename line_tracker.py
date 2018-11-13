@@ -10,7 +10,7 @@ class LineTracker:
         # P controller
         self.kp = 50
         self.kd = 50
-        self.normalSpeed = 100
+        self.normalSpeed = 80
         self.setPointSensor = 0
         self.LINETRESHOLD = 900    
         self.robot = robot
@@ -48,6 +48,12 @@ class LineTracker:
 
             leftSpeed = int(self.normalSpeed - (self.kp*error + self.kd*dError))
             rightSpeed = int(self.normalSpeed + (self.kp*error + self.kd*dError))
+            
+            if(leftSpeed > 254):
+                leftSpeed = 254
+            
+            if(rightSpeed > 254):
+                rightSpeed = 254
            
             # set the speed of the motors
             if( self.running == True ):
@@ -133,23 +139,26 @@ class LineTracker:
         if( direction == "left"): 
             while( not ( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) and self.lastSensorValue > 0)):
                 print("wait until we are out of the line")
-                pass
+                time.sleep(0.01)
+            
                 
             # Wait until the other line is catched
             while( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) or self.lastSensorValue < 0 ):
                 print(self.lastSensorValue)
                 print("outside of line")
+                time.sleep(0.01)
                 
                 
         elif( direction == "right"):
             while( not (self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) and self.lastSensorValue < 0)):
                 print("wait until we are out of the line")
-                pass
+                time.sleep(0.01)
                 
             # Wait until the other line is catched
             while( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) or self.lastSensorValue > 0 ):
                 print(self.lastSensorValue)
-                print("outside of line")
+                time.sleep(0.01)
+                #print("outside of line")
       
         
            
