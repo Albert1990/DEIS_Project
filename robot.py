@@ -42,7 +42,7 @@ class Robot:
 
     def _readSensors(self):
         while True:
-            print('_readSensors !')
+            #print('_readSensors !')
             #(leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor, distance) =  self.board.readSensors()
             (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor) =  self.board.readSensors()
             encoderPulses = EncoderPulses(leftEncoderValue, rightEncoderValue)

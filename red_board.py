@@ -33,7 +33,7 @@ class RedBoard:
         print('s1')
         sensorsData = list(self.ser.read(self.commandSize))
         print('tt')
-        print(sensorsData)
+        #print(sensorsData)
 
         leftEncoderValue = self.bytesToLong(sensorsData[2:6])
         rightEncoderValue = self.bytesToLong(sensorsData[6:10])
