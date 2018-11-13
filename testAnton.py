@@ -14,6 +14,7 @@ lineTracker.startLineTracker()
 
 
 
+
 #lineTracker.changeLane("left")
 #time.sleep(5)
 #lineTracker.changeLane("right")
@@ -23,11 +24,11 @@ lineTracker.startLineTracker()
 #print('stop line tracker')
 
 
-time.sleep(5)
-lineTracker.changeLane("left")
-time.sleep(5)
-lineTracker.changeLane("right")
-time.sleep(5)
+#time.sleep(5)
+#lineTracker.changeLane("left")
+#time.sleep(5)
+#lineTracker.changeLane("right")
+#time.sleep(5)
 
 
 

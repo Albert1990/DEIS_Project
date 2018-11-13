@@ -9,7 +9,7 @@ class RedBoard:
 
     def __init__(self, port):
         self.port = port
-        self.ser = serial.Serial(port = self.port, baudrate = 250000)
+        self.ser = serial.Serial(port = self.port, baudrate = 9600)
         # here the arduino is going to restart so we have to give it a time
         time.sleep(2)
 
@@ -40,12 +40,12 @@ class RedBoard:
         leftIRSensor = self.bytesToLong(sensorsData[10:12])
         centerIRSensor = self.bytesToLong(sensorsData[12:14])
         rightIRSensor = self.bytesToLong(sensorsData[14:16])
-        # distance = self.bytesToLong(sensorsData[16:18])
+        distance = self.bytesToLong(sensorsData[16:18])
         
         # leftColliderSensor = sensorsData[16]
         # rightColliderSensor = sensorsData[17]
-        #return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor, distance)
-        return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor)
+        return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor, distance)
+        #return (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor)
         # print(leftEncoderValue)
         # print(rightEncoderValue)
         # print(sensorsData)

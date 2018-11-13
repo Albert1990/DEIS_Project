@@ -43,8 +43,8 @@ class Robot:
     def _readSensors(self):
         while True:
             #print('_readSensors !')
-            #(leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor, distance) =  self.board.readSensors()
-            (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor) =  self.board.readSensors()
+            (leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor, distance) =  self.board.readSensors()
+            #(leftEncoderValue, rightEncoderValue, leftIRSensor, centerIRSensor, rightIRSensor) =  self.board.readSensors()
             encoderPulses = EncoderPulses(leftEncoderValue, rightEncoderValue)
             
             robotPos = odometry.calculatePosition(encoderPulses, self.getRobotPos())
@@ -52,8 +52,8 @@ class Robot:
             if(robotPos):
                 self.robotPos = robotPos
             self.irSensors = IrSensors(leftIRSensor, centerIRSensor, rightIRSensor)
-            #self.ultrasonicDistance = distance
-            #print('distance: %d' % self.ultrasonicDistance)
+            self.ultrasonicDistance = distance
+            print('distance: %d' % self.ultrasonicDistance)
             time.sleep(0.005)
 
     def getIrSensors(self):

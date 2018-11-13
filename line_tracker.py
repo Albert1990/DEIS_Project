@@ -31,7 +31,7 @@ class LineTracker:
     def compute(self):
         
         while True:
-            #print('LineTracker')
+            print('LineTracker')
             # get the sensor values from the robot
             leftIRSensor = self.robot.irSensors.left
             centerIRSensor = self.robot.irSensors.center
@@ -57,12 +57,21 @@ class LineTracker:
            
             # set the speed of the motors
             if( self.running == True ):
+                print("running")
                 self.robot.setLeftMotorSpeed(leftSpeed)
                 self.robot.setRightMotorSpeed(rightSpeed)
-            #else:
-             #   self.robot.setLeftMotorSpeed(0)
-              #  self.robot.setRightMotorSpeed(0)
                 
+            if( self.robot.getUltrasonicDistance() <= 10 ):
+                #print("under 10")
+                self.robot.setLeftMotorSpeed(0)
+                self.robot.setRightMotorSpeed(0)
+                
+                self.stopLineTracker()
+            
+            
+            else:
+                self.startLineTracker()
+            
             
             time.sleep(0.01)
 
