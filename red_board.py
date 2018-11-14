@@ -33,7 +33,7 @@ class RedBoard:
         #print('s1')
         sensorsData = list(self.ser.read(self.commandSize))
         #print('tt')
-        #print(sensorsData)
+        print(sensorsData)
 
         leftEncoderValue = self.bytesToLong(sensorsData[2:6])
         rightEncoderValue = self.bytesToLong(sensorsData[6:10])
@@ -41,6 +41,7 @@ class RedBoard:
         centerIRSensor = self.bytesToLong(sensorsData[12:14])
         rightIRSensor = self.bytesToLong(sensorsData[14:16])
         distance = self.bytesToLong(sensorsData[16:18])
+  	print("distance", distance)
         
         # leftColliderSensor = sensorsData[16]
         # rightColliderSensor = sensorsData[17]
