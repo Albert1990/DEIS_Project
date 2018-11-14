@@ -53,7 +53,7 @@ class Robot:
                 self.robotPos = robotPos
             self.irSensors = IrSensors(leftIRSensor, centerIRSensor, rightIRSensor)
             self.ultrasonicDistance = distance
-            print('distance: %d' % self.ultrasonicDistance)
+            # print('distance: %d' % self.ultrasonicDistance)
             time.sleep(0.005)
 
     def getIrSensors(self):
@@ -61,6 +61,10 @@ class Robot:
 
     def getUltrasonicDistance(self):
         return self.ultrasonicDistance
+
+    def stop(self):
+        self.setLeftMotorSpeed(0)
+        self.setRightMotorSpeed(0)
         
         
     

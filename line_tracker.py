@@ -35,15 +35,15 @@ class LineTracker:
     def compute(self):
         
         while True:
-            print('LineTracker')
+            # print('LineTracker')
             # get the sensor values from the robot
             leftIRSensor = self.robot.irSensors.left
             centerIRSensor = self.robot.irSensors.center
             rightIRSensor = self.robot.irSensors.right
-            print(leftIRSensor, centerIRSensor, rightIRSensor)
+            # print(leftIRSensor, centerIRSensor, rightIRSensor)
             
             sensorValue = self.calculateAvrSensorValue(leftIRSensor, centerIRSensor, rightIRSensor)
-            print(sensorValue)
+            # print(sensorValue)
 
             error = self.setPointSensor*1.0 - sensorValue
             dError = error - self.lastError
@@ -88,7 +88,7 @@ class LineTracker:
            
             # set the speed of the motors
             if( self.running == True ):
-                print("running", leftSpeed, rightSpeed)
+                # print("running", leftSpeed, rightSpeed)
                 self.robot.setLeftMotorSpeed(leftSpeed)
                 self.robot.setRightMotorSpeed(rightSpeed)
                 
