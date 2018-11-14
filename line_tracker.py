@@ -92,17 +92,18 @@ class LineTracker:
                 self.robot.setLeftMotorSpeed(leftSpeed)
                 self.robot.setRightMotorSpeed(rightSpeed)
                 
-           # if( self.robot.getUltrasonicDistance() <= 10 ):
-                #print("under 10")
-            #    self.robot.setLeftMotorSpeed(0)
-             #   self.robot.setRightMotorSpeed(0)
+
+            # if( self.robot.getUltrasonicDistance() <= 10 ):
+            #     #print("under 10")
+            #     self.robot.setLeftMotorSpeed(0)
+            #     self.robot.setRightMotorSpeed(0)
                 
-              #  self.stopLineTracker()
+            #     self.stopLineTracker()
             
             
-            #else:
-             #   self.startLineTracker()
-            
+            # else:
+            #     self.startLineTracker()
+
             
             time.sleep(0.01)
 
