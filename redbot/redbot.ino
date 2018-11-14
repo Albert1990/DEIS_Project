@@ -9,7 +9,7 @@ RedBotEncoder encoder = RedBotEncoder(A2, 10);
 const int commandSize = 20;
 const int trigPin = 3; 
 const int echoPin = 11;
-long duration;
+unsigned long duration;
 int distance;
 
 byte rxBuffer[commandSize], txBuffer[commandSize];
@@ -48,10 +48,10 @@ void ultrasonic(){
   digitalWrite(trigPin, LOW);
   
   // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echoPin, HIGH);
+  duration = pulseIn(echoPin, HIGH, 10000);
   
   // Calculating the distance
-  distance= duration*0.034/2; 
+  distance= (int) ((duration*0.034)/2);
 }
 
 void processCommand() {

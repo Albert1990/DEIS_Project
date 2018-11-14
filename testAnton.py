@@ -7,14 +7,13 @@ import threading
 robot = robot.Robot('/dev/ttyUSB0')
 
 
-
 lineTracker = line_tracker.LineTracker(robot)
 print('start line tracking')
 lineTracker.startLineTracker()
 
 
 
-
+#time.sleep(5)
 #lineTracker.changeLane("left")
 #time.sleep(5)
 #lineTracker.changeLane("right")

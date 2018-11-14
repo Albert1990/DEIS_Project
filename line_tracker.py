@@ -9,7 +9,7 @@ class LineTracker:
 		
         # P controller
         self.kp = 50
-        self.kd = 50
+        self.kd = 70
         self.normalSpeed = 80
         self.setPointSensor = 0
         self.LINETRESHOLD = 900    
@@ -17,6 +17,10 @@ class LineTracker:
         self.lastSensorValue = 0 
         self.lastError = 0
         self.running = False
+        
+        # Distance controller
+        self.setPointDistance = 10
+        self.distanceKp = 1.5
 
         """ The control loop.
             Maybe this called from a timer. """
@@ -36,41 +40,68 @@ class LineTracker:
             leftIRSensor = self.robot.irSensors.left
             centerIRSensor = self.robot.irSensors.center
             rightIRSensor = self.robot.irSensors.right
-            #print(leftIRSensor, centerIRSensor, rightIRSensor)
+            print(leftIRSensor, centerIRSensor, rightIRSensor)
             
             sensorValue = self.calculateAvrSensorValue(leftIRSensor, centerIRSensor, rightIRSensor)
-            #print(sensorValue)
+            print(sensorValue)
 
             error = self.setPointSensor*1.0 - sensorValue
             dError = error - self.lastError
             
             self.lastError = error
-
+            
+           
+            # Distance
+            ultrasonicDistance = self.robot.getUltrasonicDistance()
+            #print("ultrasonic distance", ultrasonicDistance)
+            if(ultrasonicDistance > 0):
+               #print("before", self.normalSpeed)
+               distanceError = ultrasonicDistance - self.setPointDistance*1.0 
+               self.normalSpeed = self.distanceKp*distanceError
+                #print("after", self.normalSpeed)
+            
+            if(self.normalSpeed < 0 ):
+                self.normalSpeed = 0
+                
+            if(self.normalSpeed > 100):
+                self.normalSpeed = 100
+                
+                
+            #if(self.normalSpeed > 30):
             leftSpeed = int(self.normalSpeed - (self.kp*error + self.kd*dError))
             rightSpeed = int(self.normalSpeed + (self.kp*error + self.kd*dError))
+            #else:
+             #   leftSpeed = 0
+              #  rightSpeed = 0
             
             if(leftSpeed > 254):
                 leftSpeed = 254
             
             if(rightSpeed > 254):
                 rightSpeed = 254
+                
+            if(leftSpeed < 0):
+                leftSpeed = 0
+            
+            if(rightSpeed < 0):
+                rightSpeed = 0
            
             # set the speed of the motors
             if( self.running == True ):
-                print("running")
+                print("running", leftSpeed, rightSpeed)
                 self.robot.setLeftMotorSpeed(leftSpeed)
                 self.robot.setRightMotorSpeed(rightSpeed)
                 
-            if( self.robot.getUltrasonicDistance() <= 10 ):
+           # if( self.robot.getUltrasonicDistance() <= 10 ):
                 #print("under 10")
-                self.robot.setLeftMotorSpeed(0)
-                self.robot.setRightMotorSpeed(0)
+            #    self.robot.setLeftMotorSpeed(0)
+             #   self.robot.setRightMotorSpeed(0)
                 
-                self.stopLineTracker()
+              #  self.stopLineTracker()
             
             
-            else:
-                self.startLineTracker()
+            #else:
+             #   self.startLineTracker()
             
             
             time.sleep(0.01)
