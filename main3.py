@@ -12,6 +12,7 @@ from std_msgs.msg import String
 import cv2
 import cv_bridge
 from cv_bridge import CvBridgeError
+from camera import Camera
 
 goalPos = RobotPos(550,65)
 firstPacket = True
@@ -77,13 +78,19 @@ def listener():
 
 robot = Robot('/dev/ttyUSB0')
 lineTracker = LineTracker(robot)
+camera = Camera()
 listener()
 
 # while True:
-#     if task == 'changeLane':
-#         print('1')
-#     if task == 'sideformation':
+#     if camera.isObstacleAvailable():
+#         lineTracker.stopLineTracker()
+#         robot.stop()
+#     else:
+#         lineTracker.startLineTracker()
+#     # if task == 'changeLane':
+#     #     print('1')
+#     # if task == 'sideformation':
 
-#     if task == 'catchTheGoal':
-#         print('3')
+#     # if task == 'catchTheGoal':
+#     #     print('3')
 #     time.sleep(0.05)

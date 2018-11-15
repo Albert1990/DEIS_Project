@@ -18,7 +18,7 @@ class Robot:
         
 
         # create a thread that read sensor data always
-        print("INit robot")
+        print("Init robot")
         t = threading.Thread(target=self._readSensors)
         t.start() 
         
