@@ -1,4 +1,4 @@
-#include <RedBot.h>
+  #include <RedBot.h>
 
 RedBotMotors motors;
 RedBotSensor leftSensor = RedBotSensor(A3);
@@ -25,8 +25,8 @@ int leftIRSensor, centerIRSensor, rightIRSensor;
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  //pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
-  //pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT); // Sets the echoPin as an Input
   Serial.begin(9600);     // opens serial port, sets data rate to 9600 bps
 }
 
@@ -35,7 +35,7 @@ void loop() {
     Serial.readBytes(rxBuffer, commandSize);
     processCommand();
   }
-  //ultrasonic();
+  ultrasonic();
 }
 
 void ultrasonic(){
@@ -116,8 +116,8 @@ void processCommand() {
        
 
         // set collider data
-        txBuffer[16] = 0x00; //( distance >> 8 ) & 0xFF;
-        txBuffer[17] = 0x00; //( distance ) & 0xFF;
+        txBuffer[16] = ( distance >> 8 ) & 0xFF;
+        txBuffer[17] = ( distance ) & 0xFF;
         txBuffer[18] = 0x00;
         txBuffer[19] = 0x00;
 //        

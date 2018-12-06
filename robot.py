@@ -1,4 +1,4 @@
-from utils import RobotPos, EncoderPulses, IrSensors, CollisionSensors
+from utils import RobotPos, EncoderPulses, IrSensors, CollisionSensors, RobotStatus
 import red_board
 import odometry
 import math
@@ -14,6 +14,7 @@ class Robot:
         self.rightMotorSpeed = 0
         self.irSensors = IrSensors()
         self.ultrasonicDistance = 0
+        self.status = RobotStatus.NOTHING
         
         
 
@@ -23,6 +24,12 @@ class Robot:
         t.start() 
         
         # create a thread that write motors data always (think about it more)
+
+    def setStatus(self, status):
+        self.status = status
+
+    def getStatus(self):
+        return self.status
 
     def setRobotPos(self, robotPos):
         self.robotPos = robotPos
@@ -65,6 +72,7 @@ class Robot:
     def stop(self):
         self.setLeftMotorSpeed(0)
         self.setRightMotorSpeed(0)
+        self.setStatus(RobotStatus.ROBOT_STOPPED)
         
         
     

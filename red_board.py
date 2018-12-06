@@ -15,7 +15,6 @@ class RedBoard:
 
     def setLeftMotorSpeed(self, speed, isPositive):
         packet = bytearray([0x01, 0x01, speed, isPositive])
-        
         return self.sendData(packet)
          
     
@@ -41,7 +40,7 @@ class RedBoard:
         centerIRSensor = self.bytesToLong(sensorsData[12:14])
         rightIRSensor = self.bytesToLong(sensorsData[14:16])
         distance = self.bytesToLong(sensorsData[16:18])
-  	    # print("distance", distance)
+        # print("distance", distance)
         
         # leftColliderSensor = sensorsData[16]
         # rightColliderSensor = sensorsData[17]
