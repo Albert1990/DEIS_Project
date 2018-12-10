@@ -7,11 +7,12 @@ from utils import RobotStatus
 class LineTracker:
 
     def __init__(self, robot):
-		
         # P controller
         self.kp = 30
         self.kd = 70
-        self.normalSpeed = 120
+        self.normalSpeed = 0
+        self.changeLaneFraction = 0
+        self.changeLaneSpeed = 0
         self.setPointSensor = 0
         self.LINETRESHOLD = 900    
         self.robot = robot
@@ -31,7 +32,6 @@ class LineTracker:
         # worker.start()
         thread.start_new_thread(self.compute, ())
         
-
 
     # the controller logic. computes the new controller output
     def compute(self):
@@ -54,12 +54,12 @@ class LineTracker:
             
            
             # Distance
-            # if self.isUltrasonicWorking:
-            #     ultrasonicDistance = self.robot.getUltrasonicDistance()
-            #     print('ultrasonicDistance:', ultrasonicDistance)
-            #     if(ultrasonicDistance > 0):
-            #         distanceError = ultrasonicDistance - self.setPointDistance*1.0 
-            #         self.normalSpeed = self.distanceKp*distanceError
+            if self.isUltrasonicWorking:
+                ultrasonicDistance = self.robot.getUltrasonicDistance()
+                print('ultrasonicDistance:', ultrasonicDistance)
+                if(ultrasonicDistance > 0):
+                    distanceError = ultrasonicDistance - self.setPointDistance*1.0 
+                    self.normalSpeed = self.distanceKp*distanceError
             
             if(self.normalSpeed < 0 ):
                 self.normalSpeed = 0
@@ -169,13 +169,12 @@ class LineTracker:
         thread.start_new_thread(self.__changeLane, (direction,))
 
     def __changeLane(self, direction):
-        fraction = 50
         if(direction == "left"):
-            self.robot.setLeftMotorSpeed(self.normalSpeed - fraction)
-            self.robot.setRightMotorSpeed(self.normalSpeed + fraction)
+            self.robot.setLeftMotorSpeed(self.normalSpeed - self.changeLaneFraction)
+            self.robot.setRightMotorSpeed(self.normalSpeed + self.changeLaneFraction)
         elif(direction == "right"):
-            self.robot.setLeftMotorSpeed(self.normalSpeed + fraction)
-            self.robot.setRightMotorSpeed(self.normalSpeed - fraction)
+            self.robot.setLeftMotorSpeed(self.normalSpeed + self.changeLaneFraction)
+            self.robot.setRightMotorSpeed(self.normalSpeed - self.changeLaneFraction)
         
         # Wait until we are out of the line and the correct side of the line
         if( direction == "left"): 
@@ -188,8 +187,8 @@ class LineTracker:
             while( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) or self.lastSensorValue < 0 ):
                 # print(self.lastSensorValue)
                 print("outside of line")
-                self.robot.setLeftMotorSpeed(70)
-                self.robot.setRightMotorSpeed(70)
+                self.robot.setLeftMotorSpeed(self.changeLaneSpeed)
+                self.robot.setRightMotorSpeed(self.changeLaneSpeed)
                 time.sleep(0.01)
                 
                 
@@ -201,8 +200,8 @@ class LineTracker:
             # Wait until the other line is catched
             while( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) or self.lastSensorValue > 0 ):
                 # print(self.lastSensorValue)
-                self.robot.setLeftMotorSpeed(70)
-                self.robot.setRightMotorSpeed(70)
+                self.robot.setLeftMotorSpeed(self.changeLaneSpeed)
+                self.robot.setRightMotorSpeed(self.changeLaneSpeed)
                 time.sleep(0.01)
                 print("outside of line")
       

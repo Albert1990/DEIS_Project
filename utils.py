@@ -31,10 +31,27 @@ class RobotStatus(Enum):
     CHANGING_LANE_FINISHED = 2
     TRACKING_LANE = 3
     ROBOT_STOPPED = 4
+    SIDE_DRIVING = 5
 
 class Senarios(Enum):
     CHANGE_LANE = 1
     TAKE_OVER = 2
     LINE_FOLLOW = 3
     OBSTACLE_AVOIDANCE = 4
+    SIDE_FORMATION = 5
+    MERGING = 6
 
+def parse_senario(sen):
+        if sen == "LINE_FOLLOW":
+            return Senarios.LINE_FOLLOW
+        if sen == "CHANGE_LANE":
+            return Senarios.CHANGE_LANE
+        if sen == "TAKE_OVER":
+            return Senarios.TAKE_OVER
+        if sen == "OBSTACLE_AVOIDANCE":
+            return Senarios.OBSTACLE_AVOIDANCE
+        if sen == "SIDE_FORMATION":
+            return Senarios.SIDE_FORMATION
+        if sen == "MERGING":
+            return Senarios.MERGING
+        return Senarios.LINE_FOLLOW
