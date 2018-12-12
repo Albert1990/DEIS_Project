@@ -11,7 +11,7 @@ class Talker():
 	def __init__(self, rate):
 		self.pub_hb = rospy.Publisher('heartbeat_channel', String, queue_size=10)
 		self.pub_ac = rospy.Publisher('action_channel', String, queue_size=10)
-    		self.pub_fb = rospy.Publisher('feedback_channel', String, queue_size=10)
+		self.pub_fb = rospy.Publisher('feedback_channel', String, queue_size=10)
 		self.rate = rospy.Rate(rate) # 10hz
 		thread.start_new_thread(self.rate.sleep,())
 

@@ -10,6 +10,8 @@ from utils import Senarios
 from utils import parse_senario
 import math
 import thread
+from talker import Talker 
+from listener import Listener
 
 import rospy
 from std_msgs.msg import String
@@ -20,11 +22,17 @@ from cv_bridge import CvBridgeError
 robotName = 'Zingo'
 partnerPosition = RobotPos()
 isLeader = False
-scenario = Senarios.MERGING
+scenario = Senarios.LINE_FOLLOW
 
 if __name__ == "__main__":
     robot = Robot('/dev/ttyUSB0')
     lineTracker = LineTracker(robot)
+    if robotName == 'Zingo':
+        rospy.init_node('Group_1_Zingo', anonymous=True)
+    else:
+        rospy.init_node('Group_1_Ringo', anonymous=True)
+    listener1 = Listener()
+    talker = Talker(10)
 
     parser = argparse.ArgumentParser(description='Red robot program')
     parser.add_argument('--robotName', type=str, default='Zingo')
@@ -45,11 +53,11 @@ if __name__ == "__main__":
 
 
     print('normalSpeed:',lineTracker.normalSpeed)
-    def listener():
-        print('listner started !')
-        rospy.init_node('Group1Test2', anonymous=True)
-        rospy.Subscriber("josefoutput", String, gpsInfoHandlar)
-        thread.start_new_thread(rospy.spin, ())
+    # def listener():
+    #     print('listner started !')
+    #     rospy.init_node('Group1Test2', anonymous=True)
+    #     rospy.Subscriber("josefoutput", String, gpsInfoHandlar)
+    #     thread.start_new_thread(rospy.spin, ())
 
     def gpsInfoHandlar(data):
         global robot
@@ -76,12 +84,35 @@ if __name__ == "__main__":
 
 
     
-    listener()
+    # listener()
+    # init gps listener
+    rospy.Subscriber("josefoutput", String, gpsInfoHandlar)
+    thread.start_new_thread(rospy.spin, ())
     takeOverCounter = 0
     while True:
+        message = listener1.receive()
+        print('msg:', message)
+        if message is not None:
+            print('rec msg:', message)
+            if message.action_id == 'm':
+                print('#####merge rec#####')
+                if robotName == 'Zingo':
+                    scenario = Senarios.MERGING
+                    isLeader = True
+                else:
+                    print('#####merge feeed#####')
+                    talker.pub_feedback('m',5, 6, 'msg 1')
+                    scenario = Senarios.MERGING
+                    isLeader = False
+
         if scenario == Senarios.LINE_FOLLOW:
             lineTracker.turnUltrasonic(True)
             lineTracker.start()
+            # pass
+            time.sleep(2)
+            if robotName == 'Zingo':
+                talker.pub_action('m', 6, -1, 5, 'msg1')
+                print('#######message has been sent !#########')
             pass
 
         if scenario == Senarios.CHANGE_LANE:

@@ -68,7 +68,7 @@ class RedBoard:
         # print('------------')
 
         self.ser.write(data)
-        #print("send success:", data)
+        # print("send success:", data)
         return True
 
     def bytesToLong(self, bytesArr):

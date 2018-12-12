@@ -56,7 +56,7 @@ class LineTracker:
             # Distance
             if self.isUltrasonicWorking:
                 ultrasonicDistance = self.robot.getUltrasonicDistance()
-                print('ultrasonicDistance:', ultrasonicDistance)
+                # print('ultrasonicDistance:', ultrasonicDistance)
                 if(ultrasonicDistance > 0):
                     distanceError = ultrasonicDistance - self.setPointDistance*1.0 
                     self.normalSpeed = self.distanceKp*distanceError
@@ -90,6 +90,7 @@ class LineTracker:
             # set the speed of the motors
             if( self.running == True ):
                 # print("running", leftSpeed, rightSpeed)
+                # print('set motors spppp')
                 self.robot.setLeftMotorSpeed(leftSpeed)
                 self.robot.setRightMotorSpeed(rightSpeed)
                 

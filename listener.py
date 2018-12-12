@@ -13,8 +13,8 @@ import thread
 class Listener():
 	def __init__(self):
 		rospy.Subscriber('heartbeat_channel', String, self.heartbeat_receive)
- 		rospy.Subscriber('action_channel', String, self.action_receive)
-    		rospy.Subscriber('feedback_channel', String, self.feedback_receive)
+		rospy.Subscriber('action_channel', String, self.action_receive)
+		rospy.Subscriber('feedback_channel', String, self.feedback_receive)
 		#rospy.init_node('Group_1', anonymous=True)
 		self.action_queue = []
 		thread.start_new_thread(self.spin, ())
@@ -30,12 +30,13 @@ class Listener():
 	
 	
 	def heartbeat_receive(self, data):
-		if data.data.split()[2] == '5':
+		if data.data.split()[2] == '5' or data.data.split()[2] == '6':
 			rospy.loginfo(rospy.get_caller_id() + 'I heard heartbeat %s', data.data)
 
 	def action_receive(self, data):
 		print("action receive")
-		if data.data.split()[4] == '5':
+		print('data:', data.data)
+		if data.data.split()[4] == '5' or data.data.split()[4] == '6':
 			rospy.loginfo(rospy.get_caller_id() + 'I heard action %s', data.data)
 			#talker = Talker(10)
 			action_id = data.data.split()[1]
@@ -46,7 +47,7 @@ class Listener():
 			self.action_queue.append(action_message)
 	
 	def feedback_receive(self, data):
-		if data.data.split()[3] == '5':
+		if data.data.split()[3] == '5'or data.data.split()[3] == '6':
 			rospy.loginfo(rospy.get_caller_id() + 'I heard feedback %s', data.data)
 
 class ActionMessage:
