@@ -8,8 +8,8 @@ class LineTracker:
 
     def __init__(self, robot):
         # P controller
-        self.kp = 30
-        self.kd = 70
+        self.kp = 40
+        self.kd = 80
         self.normalSpeed = 0
         self.changeLaneFraction = 0
         self.changeLaneSpeed = 0

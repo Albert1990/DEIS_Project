@@ -15,7 +15,7 @@ class Robot:
         self.irSensors = IrSensors()
         self.ultrasonicDistance = 0
         self.status = RobotStatus.NOTHING
-        
+        self.isLeader = False
         
 
         # create a thread that read sensor data always

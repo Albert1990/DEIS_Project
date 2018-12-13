@@ -17,6 +17,7 @@ class Listener():
 		rospy.Subscriber('feedback_channel', String, self.feedback_receive)
 		#rospy.init_node('Group_1', anonymous=True)
 		self.action_queue = []
+		self.feedback_queue = []
 		thread.start_new_thread(self.spin, ())
 	
 	
@@ -24,10 +25,12 @@ class Listener():
 		rospy.spin()
 
 	# The method the be called from outside to get the latest action
-	def receive(self):
+	def receive_action(self):
 		if len(self.action_queue) > 0:
 			return self.action_queue.pop(0)
-	
+	def receive_feedback(self):
+		if len(self.feedback_queue) > 0:
+			return self.feedback_queue.pop(0)
 	
 	def heartbeat_receive(self, data):
 		if data.data.split()[2] == '5' or data.data.split()[2] == '6':
@@ -49,6 +52,11 @@ class Listener():
 	def feedback_receive(self, data):
 		if data.data.split()[3] == '5'or data.data.split()[3] == '6':
 			rospy.loginfo(rospy.get_caller_id() + 'I heard feedback %s', data.data)
+			action_id = data.data.split()[1]
+			source_robot_id = data.data.split()[2]
+			msg = data.data.split()[4]
+			feedback_message  = FeedbackMessage(action_id, source_robot_id, msg)
+			self.feedback_queue.append(feedback_message)
 
 class ActionMessage:
 	
@@ -56,5 +64,12 @@ class ActionMessage:
 		self.action_id = action_id
 		self.source_robot_id = source_robot_id
 		self.target_platoon_id = target_platoon_id
+		self.msg = msg
+
+class FeedbackMessage:
+	
+	def __init__(self, action_id, source_robot_id, msg):
+		self.action_id = action_id
+		self.source_robot_id = source_robot_id
 		self.msg = msg
 			

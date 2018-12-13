@@ -56,7 +56,7 @@ class Talker():
 
 	def pub_feedback(self, action_id, my_robot_id, other_robot_id,msg):
 		#'d',5, 8, 'hello'
-	    	hello_str = self.feedback( action_id, my_robot_id, other_robot_id,msg)
+		hello_str = self.feedback(action_id, my_robot_id, other_robot_id,msg)
 		rospy.loginfo(hello_str)
 		self.pub_fb.publish(hello_str)
 		
