@@ -112,12 +112,12 @@ class LineTracker:
         self.isUltrasonicWorking = flag
 
     def start(self):
-        print("line tracking started")
+        # print("line tracking started")
         self.running = True
         # start linetracking
 
     def stop(self):
-        print("line tracking stopped")
+        # print("line tracking stopped")
         self.running = False
 		
         # stop linetracking
@@ -180,14 +180,14 @@ class LineTracker:
         # Wait until we are out of the line and the correct side of the line
         if( direction == "left"): 
             while( not ( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) and self.lastSensorValue > 0)):
-                print("wait until we are out of the line")
+                # print("wait until we are out of the line")
                 time.sleep(0.01)
             
                 
             # Wait until the other line is catched
             while( self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) or self.lastSensorValue < 0 ):
                 # print(self.lastSensorValue)
-                print("outside of line")
+                # print("outside of line")
                 self.robot.setLeftMotorSpeed(self.changeLaneSpeed)
                 self.robot.setRightMotorSpeed(self.changeLaneSpeed)
                 time.sleep(0.01)
@@ -195,7 +195,7 @@ class LineTracker:
                 
         elif( direction == "right"):
             while( not (self.isOutSideOfTrack(self.robot.irSensors.left, self.robot.irSensors.center, self.robot.irSensors.right) and self.lastSensorValue < 0)):
-                print("wait until we are out of the line")
+                # print("wait until we are out of the line")
                 time.sleep(0.01)
                 
             # Wait until the other line is catched
@@ -204,6 +204,6 @@ class LineTracker:
                 self.robot.setLeftMotorSpeed(self.changeLaneSpeed)
                 self.robot.setRightMotorSpeed(self.changeLaneSpeed)
                 time.sleep(0.01)
-                print("outside of line")
+                # print("outside of line")
       
         self.robot.setStatus(RobotStatus.CHANGING_LANE_FINISHED)

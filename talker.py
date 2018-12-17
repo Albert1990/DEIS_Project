@@ -45,18 +45,18 @@ class Talker():
 	def pub_heartbeat(self, platoon_id,robot_id,robot_type,lane_id,robot_pose,speed):
 		# 1,5,1,3,(2,5,4,8),15
 		hello_str = self.heartbeat(platoon_id,robot_id,robot_type,lane_id,robot_pose,speed)
-		rospy.loginfo(hello_str)
-    		self.pub_hb.publish(hello_str)
+		# rospy.loginfo(hello_str)
+		self.pub_hb.publish(hello_str)
 
 	def pub_action(self, action_id,source_robot_id,target_platoon_id,target_robot_id,msg):
 		#'a', 5, 2,7,'hello'
 		hello_str = self.action(action_id,source_robot_id,target_platoon_id,target_robot_id,msg)	
-		rospy.loginfo(hello_str)
+		# rospy.loginfo(hello_str)
 		self.pub_ac.publish(hello_str)
 
 	def pub_feedback(self, action_id, my_robot_id, other_robot_id,msg):
 		#'d',5, 8, 'hello'
 		hello_str = self.feedback(action_id, my_robot_id, other_robot_id,msg)
-		rospy.loginfo(hello_str)
+		# rospy.loginfo(hello_str)
 		self.pub_fb.publish(hello_str)
 		

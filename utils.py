@@ -32,7 +32,8 @@ class RobotStatus(Enum):
     TRACKING_LANE = 3
     ROBOT_STOPPED = 4
     SIDE_DRIVING = 5
-    SENARIO_FINISHED = 6
+    MERGING_START = 6
+    MERGING_FINISHED = 7
 
 class Senarios(Enum):
     CHANGE_LANE = 1
@@ -56,4 +57,6 @@ def parse_senario(sen):
             return Senarios.SIDE_FORMATION
         if sen == "MERGING":
             return Senarios.MERGING
+        if sen == "NEW_LEADER":
+            return Senarios.NEW_LEADER
         return Senarios.LINE_FOLLOW

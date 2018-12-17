@@ -1,5 +1,6 @@
 from utils import RobotStatus
 import time
+from utils import Senarios
 
 def lineFollow(lineTracker):
     lineTracker.turnUltrasonic(True)
@@ -75,6 +76,7 @@ def obstacleAvoidance(robot, lineTracker):
         lineTracker.start()
 
 def sideFormation(robot, lineTracker, partnerPosition, singleSenario = True):
+    global takeOverCounter
     if robot.getStatus() == RobotStatus.NOTHING:
         lineTracker.start()
         time.sleep(1)
@@ -84,15 +86,16 @@ def sideFormation(robot, lineTracker, partnerPosition, singleSenario = True):
 
     if robot.getStatus() == RobotStatus.CHANGING_LANE_FINISHED:
         if not singleSenario and takeOverCounter != 0:
-            return False
-        robot.setStatus(RobotStatus.SIDE_DRIVING)
-        lineTracker.start()
-        takeOverCounter += 1
+            print('soso')
+        else:
+            robot.setStatus(RobotStatus.SIDE_DRIVING)
+            lineTracker.start()
+            takeOverCounter += 1
 
     if robot.getStatus() == RobotStatus.SIDE_DRIVING:
         myPos = robot.getRobotPos()
-        print('myPos: (%d,%d)' % (myPos.X, myPos.Y))
-        print('partnerPos: (%d,%d)' % (partnerPosition.X, partnerPosition.Y))
+        # print('myPos: (%d,%d)' % (myPos.X, myPos.Y))
+        # print('partnerPos: (%d,%d)' % (partnerPosition.X, partnerPosition.Y))
         
         diffY = abs(partnerPosition.Y - myPos.Y)
         diffX = (partnerPosition.X - myPos.X)
@@ -100,8 +103,8 @@ def sideFormation(robot, lineTracker, partnerPosition, singleSenario = True):
         if myPos.Y > 300:
             diffX = -diffX
         
-        print("diffX:"+str(diffX))
-        print("diffY:"+str(diffY))
+        # print("diffX:"+str(diffX))
+        # print("diffY:"+str(diffY))
         if diffX <= 33:
             lineTracker.stop()
             robot.slowdown()
@@ -109,6 +112,7 @@ def sideFormation(robot, lineTracker, partnerPosition, singleSenario = True):
             lineTracker.start()
 
 def merge(robot, lineTracker, partnerPosition, startStatus= RobotStatus.NOTHING, singleSenario= True):
+    global takeOverCounter
     if robot.isLeader:
         if robot.getStatus() == startStatus:
             myPos = robot.getRobotPos()
@@ -118,8 +122,8 @@ def merge(robot, lineTracker, partnerPosition, startStatus= RobotStatus.NOTHING,
             if myPos.Y > 300:
                 diffX = -diffX
             
-            print("diffX:"+str(diffX))
-            print("diffY:"+str(diffY))
+            # print("diffX:"+str(diffX))
+            # print("diffY:"+str(diffY))
             if diffX < -60:
                 lineTracker.stop()
                 robot.setStatus(RobotStatus.CHANGING_LANE)
@@ -127,25 +131,27 @@ def merge(robot, lineTracker, partnerPosition, startStatus= RobotStatus.NOTHING,
             else:
                 lineTracker.start()
         if robot.getStatus() == RobotStatus.CHANGING_LANE_FINISHED:
+            print(singleSenario, takeOverCounter)
             if not singleSenario and takeOverCounter != 1:
                 return False
-            lineTracker.start()
-            robot.setStatus(RobotStatus.NOTHING)
-            scenario = Senarios.LINE_FOLLOW
+            robot.setStatus(RobotStatus.MERGING_FINISHED)
+            print('###merging finished !!####')
+            takeOverCounter += 1
 
     else: # follower
-        if robot.getStatus() == RobotStatus.NOTHING:
+        if robot.getStatus() == startStatus:
             myPos = robot.getRobotPos()
             diffY = abs(partnerPosition.Y - myPos.Y)
             if diffY < 10 and diffY != 0:
+                robot.setStatus(RobotStatus.MERGING_FINISHED)
                 scenario = Senarios.LINE_FOLLOW
             diffX = (partnerPosition.X - myPos.X)
             
             if myPos.Y > 300:
                 diffX = -diffX
             
-            print("diffX:"+str(diffX))
-            print("diffY:"+str(diffY))
+            # print("diffX:"+str(diffX))
+            # print("diffY:"+str(diffY))
             if diffX > 100:
                 lineTracker.start()
             else:

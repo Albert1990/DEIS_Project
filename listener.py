@@ -37,10 +37,10 @@ class Listener():
 			rospy.loginfo(rospy.get_caller_id() + 'I heard heartbeat %s', data.data)
 
 	def action_receive(self, data):
-		print("action receive")
-		print('data:', data.data)
+		# print("action receive")
+		# print('data:', data.data)
 		if data.data.split()[4] == '5' or data.data.split()[4] == '6':
-			rospy.loginfo(rospy.get_caller_id() + 'I heard action %s', data.data)
+			# rospy.loginfo(rospy.get_caller_id() + 'I heard action %s', data.data)
 			#talker = Talker(10)
 			action_id = data.data.split()[1]
 			source_robot_id = data.data.split()[2]
@@ -51,7 +51,7 @@ class Listener():
 	
 	def feedback_receive(self, data):
 		if data.data.split()[3] == '5'or data.data.split()[3] == '6':
-			rospy.loginfo(rospy.get_caller_id() + 'I heard feedback %s', data.data)
+			# rospy.loginfo(rospy.get_caller_id() + 'I heard feedback %s', data.data)
 			action_id = data.data.split()[1]
 			source_robot_id = data.data.split()[2]
 			msg = data.data.split()[4]

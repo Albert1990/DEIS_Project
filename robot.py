@@ -74,9 +74,9 @@ class Robot:
         self.setRightMotorSpeed(0)
         self.setStatus(RobotStatus.ROBOT_STOPPED)
 
-    def slowdown(self):
-        self.setLeftMotorSpeed(0)
-        self.setRightMotorSpeed(0)
+    def slowdown(self, speed):
+        self.setLeftMotorSpeed(speed)
+        self.setRightMotorSpeed(speed)
         
         
     
